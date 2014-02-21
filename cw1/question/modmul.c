@@ -6,7 +6,7 @@
 #if DEBUG
   #define SHOWERROR() printf("line %d in function %s in file %s\n", __LINE__, __FUNCTION__, __FILE__);
 #else
-  #define SHOWERROR() 
+  #define SHOWERROR(); 
 #endif
 
  #define max(a,b) \
@@ -44,18 +44,18 @@ void mAryFixed(mpz_t result, mpz_t x, mpz_t y, mpz_t N){
 
     //mpz_tstbit
 
-void calculateT(int tSize, mpz_t* T, mpz_t x, mpz_t N, mpz_t omega){
+void calculateT(int tSize, mpz_t* T, mpz_t x, mpz_t N, mpz_t omega, mpz_t u2, mpz_t temp, mpz_t b, mpz_t r, unsigned long long t, unsigned long long nModB){
     int i = 0;
     int k = 0;
     mpz_t xSquared;
     mpz_inits(T[0], xSquared, NULL);
     mpz_set(T[0], x);
-    ZnModMul(xSquared, x, x, N, omega); 
+    ZnModMul(xSquared, x, x, N, omega, u2, temp, b, r, t, nModB); 
     //mpz_mul(xSquared, x, x);
     //mpz_mod(xSquared, xSquared, N);  
     for(i = 1; i < tSize; i++){
       mpz_init(T[i]);
-      ZnModMul(T[i], T[i-1], xSquared, N, omega);
+      ZnModMul(T[i], T[i-1], xSquared, N, omega, u2, temp, b, r, t, nModB);
       //mpz_mul(T[i], T[i-1], xSquared);
       //mpz_mod(T[i], T[i], N);  
     }
@@ -66,16 +66,19 @@ void newPow(mpz_t t, mpz_t x, mpz_t y, mpz_t N){
   int k = 4;
   double m = pow(2,k);
   size_t tSize = round(m/2);
-  mpz_t T[tSize], xBar, omega, pSqared, one;
-  mpz_inits(t, pSqared, xBar, omega, one, NULL);
+  unsigned long long t2;
+  mpz_t T[tSize], xBar, omega, pSqared, one, u2, temp, b, r;
+  mpz_inits(t, pSqared, xBar, omega, one, u2, temp, b, r, NULL);
+  mpz_setbit(b, 64);
   mpz_set_ui(pSqared, 1);
   mpz_set_ui(one, 1);
   calculatePSquared(pSqared, N);
   calculateOmega(omega,N);
+  unsigned long long nModB = mpz_getlimbn(omega, 0);
  // mpz_mod(x, x, N);
-  ZnModMul(xBar, x, pSqared, N, omega);
-  ZnModMul(t, one, pSqared , N, omega);
-  calculateT(tSize, T, xBar, N, omega);
+  ZnModMul(xBar, x, pSqared, N, omega, u2, temp, b, r, t2, nModB);
+  ZnModMul(t, one, pSqared , N, omega, u2, temp, b, r, t2, nModB);
+  calculateT(tSize, T, xBar, N, omega, u2, temp, b, r, t2, nModB);
   int i = mpz_sizeinbase (y, 2) -1;
   size_t l, u;
   int e, c, g;
@@ -98,13 +101,13 @@ void newPow(mpz_t t, mpz_t x, mpz_t y, mpz_t N){
         }
       }
       for(g = 0; g < i-l+1; g++){
-         ZnModMul(t, t, t, N, omega);
+         ZnModMul(t, t, t, N, omega, u2, temp, b, r, t2, nModB);
       }
 
         if(u != 0){
             size_t q = (u-1)/2;
 
-            ZnModMul(t, t, T[q], N, omega);
+            ZnModMul(t, t, T[q], N, omega, u2, temp, b, r, t2, nModB);
         }
       i = l-1;
     }
@@ -112,7 +115,7 @@ void newPow(mpz_t t, mpz_t x, mpz_t y, mpz_t N){
    for(i = 0; i < tSize; i++){
       mpz_clear( T[i] );
   }
-  ZnModMul(t, t, one, N, omega);
+  ZnModMul(t, t, one, N, omega, u2, temp, b, r, t, nModB);
    mpz_clear(xBar);
    mpz_clear(omega);
    mpz_clear(pSqared);
@@ -180,21 +183,14 @@ void calculateP(mpz_t t, mpz_t N){
     mpz_setbit(t, mpz_size( N )*64);
 }
 
-void ZnModMul(mpz_t result, mpz_t x2, mpz_t y, mpz_t N, mpz_t omega){
-  mpz_t x;
-  mpz_init(x);
-  mpz_mod(x, x2, N);
+void ZnModMul(mpz_t result, mpz_t x, mpz_t y, mpz_t N, mpz_t omega, mpz_t u, mpz_t temp, mpz_t b, mpz_t r, unsigned long long t, unsigned long long nModB){
   int i;
-  mpz_t u, temp, b, r;
-  mpz_inits(r, u, temp, b, NULL);
-  mpz_setbit(b, 64);
   size_t Tx = mpz_size( N );
-  mp_limb_t ox[1];
-  unsigned long long t;
-  mpz_export(ox, NULL, -1, sizeof( mp_limb_t ), -1, 0, omega );
-  unsigned long long nModB = ox[0];
+  mpz_set_ui(r, 0);
+  unsigned long long x0 = mpz_getlimbn(x,0);
   for(i = 0; i < Tx; i++){
-    t = (mpz_getlimbn(r,0)+(mpz_getlimbn(y,i)*mpz_getlimbn(x,0)))*nModB;
+    unsigned long long yI = mpz_getlimbn(y,i);
+    t = (mpz_getlimbn(r,0)+(yI*x0))*nModB;
     mpz_mul_ui(temp, x,  mpz_getlimbn(y,i));
     mpz_mul_ui(u, N, t);
     mpz_add(u, temp, u);
@@ -211,7 +207,7 @@ void ZnModMul(mpz_t result, mpz_t x2, mpz_t y, mpz_t N, mpz_t omega){
 
 }
 
-void newMul(mpz_t r, mpz_t x, mpz_t y, mpz_t N){
+/*void newMul(mpz_t r, mpz_t x, mpz_t y, mpz_t N){
   int i;
 
   mpz_t omega, pSqared, p, xBar, yBar, temp, g;
@@ -240,20 +236,24 @@ void newMul(mpz_t r, mpz_t x, mpz_t y, mpz_t N){
   mpz_clear(xBar);
   mpz_clear(yBar);
 
+}*/
+
+void montRed(mpz_t x, mpz_t omega, mpz_t N){
+    mpz_t 
 }
 
 
 void test() {
   // fill in this function with solution
-    mpz_t N, e, m, c;
+    mpz_t omega, N, e, m, c;
     int lineCount = 0;
-    mpz_inits(N,e,m,c,NULL);
+    mpz_inits(N, omega, e,m,c,NULL);
+
     do{
       lineCount = gmp_scanf( "%Zx\n%Zx\n%Zx", N, e, m );
        if(lineCount == 3){
-        //mpz_mul(c, m, e);
-        //mpz_mod(c, c, N);
-        newMul(c,m,e, N);
+        calculateOmega(omega, N);
+        montRed(m, omega, N);
         gmp_printf("T = %Zd\n", c);
        // gmp_printf("%Zx", c);
        }
@@ -354,7 +354,7 @@ void stage3() {
       lineCount  =gmp_scanf( "%Zx\n%Zx\n%Zx\n%Zx\n%Zx",  p,q,g,h,m );
       gmp_randseed (randState, seed);
       mpz_urandomm(k, randState, q);
-    //mpz_set_ui(k, 1);
+      mpz_set_ui(k, 1);
       if(lineCount == 5){
         newPow(c1, g, k, p);
         newPow(c2, h, k, p);
