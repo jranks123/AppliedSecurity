@@ -187,11 +187,13 @@ void ZnModMul(mpz_t result, mpz_t x, mpz_t y, mpz_t N, mpz_t omega, mpz_t u, mpz
   int i;
   size_t Tx = mpz_size( N );
   mpz_set_ui(r, 0);
-  unsigned long long x0 = mpz_getlimbn(x,0);
+  unsigned long long x0;
+  x0  = mpz_getlimbn(x,0);
+  unsigned long long yI;
   for(i = 0; i < Tx; i++){
-    unsigned long long yI = mpz_getlimbn(y,i);
+    yI = mpz_getlimbn(y,i);
     t = (mpz_getlimbn(r,0)+(yI*x0))*nModB;
-    mpz_mul_ui(temp, x,  mpz_getlimbn(y,i));
+    mpz_mul_ui(temp, x,  yI);
     mpz_mul_ui(u, N, t);
     mpz_add(u, temp, u);
     mpz_add(r, r, u);
@@ -238,9 +240,20 @@ void ZnModMul(mpz_t result, mpz_t x, mpz_t y, mpz_t N, mpz_t omega, mpz_t u, mpz
 
 }*/
 
-void montRed(mpz_t x, mpz_t omega, mpz_t N){
-    mpz_t 
-}
+/*void montRed(mpz_t x, mpz_t omega, mpz_t N){
+    mpz_t r, b, u;
+    mpz_inits(r, b, u, NULL);
+    mpz_setbit(b, 64);
+    mpz_set(r, t);
+    int i;
+    size_t nx = mpz_size( N ); 
+    unsigned long long x0 = mpz_getlimbn(x,0);
+    unsigned long long rI;
+    for( i = 0; i < Nx; i++){
+
+    }
+
+}*/
 
 
 void test() {
@@ -253,7 +266,7 @@ void test() {
       lineCount = gmp_scanf( "%Zx\n%Zx\n%Zx", N, e, m );
        if(lineCount == 3){
         calculateOmega(omega, N);
-        montRed(m, omega, N);
+       // montRed(m, omega, N);
         gmp_printf("T = %Zd\n", c);
        // gmp_printf("%Zx", c);
        }
