@@ -208,11 +208,15 @@ void ZnModMul(mpz_t result, mpz_t x, mpz_t y, mpz_t N, mpz_t omega, mpz_t u, mpz
   size_t Tx = mpz_size( N );
   mpz_set_ui(r, 0);
   unsigned long long x0;
-  x0  = mpz_getlimbn(x,0);
+ // x0  = mpz_getlimbn(x,0);
+  x0  = x->_mp_d[0];
   unsigned long long yI;
+  size_t ySize = mpz_size(y);
   for(i = 0; i < Tx; i++){
-    yI = mpz_getlimbn(y,i);
-    t = (mpz_getlimbn(r,0)+(yI*x0))*nModB;
+   // yI = mpz_getlimbn(y,i);
+    yI = i<ySize? y->_mp_d[i]: 0;
+   // printf("%d\n", yI);
+    t = (r->_mp_d[0]+(yI*x0))*nModB;
     mpz_mul_ui(temp, x,  yI);
     mpz_mul_ui(u, N, t);
     mpz_add(u, temp, u);
