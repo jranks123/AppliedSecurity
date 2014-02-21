@@ -43,6 +43,26 @@ void mAryFixed(mpz_t result, mpz_t x, mpz_t y, mpz_t N){
 }*/
 
     //mpz_tstbit
+void CRT(mpz_t N,mpz_t d,mpz_t p,mpz_t q,mpz_t d_p,mpz_t d_q,mpz_t i_p,mpz_t i_q,mpz_t c,mpz_t m,mpz_t u,mpz_t temp1,mpz_t temp2){
+    mpz_t(cHold);
+    mpz_init(cHold);
+    mpz_mod(cHold, c, q);
+    newPow(temp1, cHold, d_q,q);
+    mpz_mod(cHold, c, p);
+    newPow(temp2, cHold, d_p,p);
+    //mpz_powm(temp1, c, d_q, q);
+    //  mpz_powm(temp2, c, d_p, p);
+
+
+    mpz_sub(u, temp1, temp2);
+    mpz_mul(u, u, i_p);
+    mpz_mod(u,u,q);
+
+    mpz_mul(m, p, u);
+    mpz_add(m, m, temp2);
+    mpz_mod(m,m,N);
+
+}
 
 void calculateT(int tSize, mpz_t* T, mpz_t x, mpz_t N, mpz_t omega, mpz_t u2, mpz_t temp, mpz_t b, mpz_t r, unsigned long long t, unsigned long long nModB){
     int i = 0;
@@ -77,7 +97,6 @@ void newPow(mpz_t t, mpz_t x, mpz_t y, mpz_t N){
   unsigned long long nModB = mpz_getlimbn(omega, 0);
  // mpz_mod(x, x, N);
   ZnModMul(xBar, x, pSqared, N, omega, u2, temp, b, r, t2, nModB);
-  gmp_printf("T = %Zd\n", xBar);
   ZnModMul(t, one, pSqared , N, omega, u2, temp, b, r, t2, nModB);
   calculateT(tSize, T, xBar, N, omega, u2, temp, b, r, t2, nModB);
   int i = mpz_sizeinbase (y, 2) -1;
@@ -210,36 +229,7 @@ void ZnModMul(mpz_t result, mpz_t x, mpz_t y, mpz_t N, mpz_t omega, mpz_t u, mpz
 
 }
 
-/*void newMul(mpz_t r, mpz_t x, mpz_t y, mpz_t N){
-  int i;
 
-  mpz_t omega, pSqared, p, xBar, yBar, temp, g;
-  mpz_inits(omega, pSqared, xBar, yBar, p, g, temp, NULL);
-
-
-
-  mpz_set_ui(pSqared, 1);
-  calculateOmega(omega,N);
-  calculatePSquared(pSqared, N);
-  //calculateP(p, N);
-
-  
-  ZnModMul(xBar, x, pSqared, N, omega);
-  ZnModMul(yBar, y, pSqared, N, omega);
-  ZnModMul(g, xBar, yBar, N, omega);
-  mpz_set_ui(temp,1);
-  ZnModMul(r, g, temp, N, omega);
-
-
-  mpz_clear(omega);
-  mpz_clear(pSqared);
-  mpz_clear(g);
-  mpz_clear(temp);
-  mpz_clear(p);
-  mpz_clear(xBar);
-  mpz_clear(yBar);
-
-}*/
 
 void montRed(mpz_t result, mpz_t x, mpz_t omega, mpz_t N){
     mpz_t r, b, u, Nshift;
@@ -416,7 +406,7 @@ void stage4() {
     int lineCount = 0;
     mpz_inits(p,q,g,h,m,c1,c2, hold1, hold2, NULL);
     do{
-      lineCount  =gmp_scanf( "%Zx\n%Zx\n%Zx\n%Zx\n%Zx\n%Zx",  p,q,g,h,c1,c2 );
+      lineCount  =gmp_scanf( "%Zx\n%Zx\n%Zx\n%Zx\n%Zx\n%Zx", p,q,g,h,c1,c2 );
       if(lineCount == 6){
         mpz_sub(hold1, q, h);
         newPow(hold2, c1, hold1, p);
