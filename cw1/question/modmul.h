@@ -11,6 +11,7 @@
 
 #endif
 
+//This function performs Mongomery Reduction
 void montRed(mpz_t result, mpz_t x, mpz_t omega, mpz_t N, mpz_t b){
     mpz_t r, u, Nshift;
     mpz_inits(r, Nshift, u, NULL);

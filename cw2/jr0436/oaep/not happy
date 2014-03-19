@@ -1,0 +1,152 @@
+import sys, subprocess, math
+from decimal import *
+
+
+
+def iround(x):
+    """iround(number) -> integer
+    Round a number to the nearest integer."""
+    return int(round(x) - .5) + (x > 0)
+
+def trunc(f, n):
+    '''Truncates/pads a float f to n decimal places without rounding'''
+    slen = len('%.*f' % (n, f))
+    return str(f)[:slen]
+
+def ceildiv(a, b):
+    return (long(a + (b-1))//long(b))
+    #x = long(-a/b)
+	#return -(int(math.floor(long(x)) - 1))
+
+
+def interact( G ) :
+  # Send      G      to   attack target.
+  target_in.write( "%s\n" % ( G ) ) ; target_in.flush()
+
+  # Receive ( t, r ) from attack target.
+  t = int( target_out.readline().strip() )
+
+
+
+  return ( t )
+
+
+def attack(A) :
+	with open(A) as thefile:
+	    lines = thefile.readlines()  
+
+	n = lines[0]
+	e = lines[1]
+	c = lines[2]
+
+	nP = int(n, 16)
+	eP = int(e, 16)
+	cP = int(c, 16)
+
+
+
+
+	k = math.ceil(math.log(int(n, 16), 256))
+	B = pow(2, 8*(int(k)-1))
+	
+
+	f1 = 1
+	result = 0
+	while result != 1:
+		f1 = f1*2
+		result = pow(f1, eP, nP)
+		result = (result*cP)%nP
+		result = hex(int(result)).rstrip("L").lstrip("0x") or "0"
+		result = (interact(result.zfill(256)))
+
+	f2 = int(math.floor(((nP+B)/B))*(f1/2))
+	while(result == 1):
+		f2Hex = hex(int(f2)).rstrip("L").lstrip("0x") or "0"
+		result = (interact(f2Hex.zfill(256)))
+		if result == 1 :
+			f2 = f2+(f1/2)
+
+	print(f2)		
+
+
+
+
+	mMin = ceildiv(nP,f2)
+	mMax =  int(math.floor((nP + B)/f2))
+	print(f2*(mMax-mMin))
+	print(B)
+	result = 1
+	count = 1
+	while(math.fabs(mMax-mMin)>0):
+		fTmp = int(math.floor((2*B)/(mMax-mMin)))
+		#print(i/nP)
+		#print"%f" %math.floor(i/nP)
+		#print(int(math.floor(i/nP)))
+		#print((i//nP))
+		i = int(math.floor(fTmp*mMin/nP))
+		print(i)
+	#	print(" ")
+		#i = Decimal((Decimal(i)/Decimal(nP))).to_integral_exact(rounding=ROUND_FLOOR)	
+		#f3 = Decimal(((i*Decimal(nP))/mMin)).to_integral_exact(rounding=ROUND_CEILING)	
+		f3 = ceildiv((i*nP),mMin)
+		#print(f3)
+		#print"%d" %int(math.floor((i*nP)/(mMin)))
+		#print long(i*nP)/(mMin)
+		#print Decimal(i*nP)/Decimal(mMin)
+		#print(" ")
+		f3Hex = hex(int(f3)).rstrip("L").lstrip("0x") or "0"
+		result = (interact(f3Hex.zfill(256)))
+
+		#print(i)
+		#print(nP)
+		#print(B)
+		#print(f3)
+		#print(" ")
+		if result == 1:
+			mMin = ceildiv(((i*(nP))+B),f3)
+		else:
+			mMax =int(math.floor(((i*(nP))+B)/f3))
+
+
+		#print "mMin %d" %mMin
+		#print "mMax %d" %mMax
+	#	print(mMax-mMin)
+	#	print("\n")
+		#print(mMin)
+		#print(mMax)
+		#print(" ")
+
+		if(mMin==mMax):
+		#	print("OMG")
+		#	print(f3)
+			break
+
+	#print(f1)
+	#print(f3)
+	print("now- ")
+	print(pow(int(f3), eP,nP))
+	print(" then -")
+	print(int(c, 16))	
+	#print(" ")
+
+
+
+
+
+if ( __name__ == "__main__" ) :
+  # Produce a sub-process representing the attack target.
+  target = subprocess.Popen( args   = sys.argv[ 1 ],
+                             stdout = subprocess.PIPE, 
+                             stdin  = subprocess.PIPE )
+
+  # Construct handles to attack target standard input and output.
+  target_out = target.stdout
+  target_in  = target.stdin
+
+  # Execute a function representing the attacker.
+  attack(sys.argv[2])
+
+
+
+
+
