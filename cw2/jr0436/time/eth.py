@@ -1,0 +1,62 @@
+import sys, subprocess, math
+from Crypto.Util import number 
+
+def montMul(w ,p, x, y, N):
+	r = x*y
+	r = (r + (r*w % p) * N) / p
+	sub = False
+	if r >= N:
+		r = r - N
+		sub = True
+	return r
+
+
+def computeSigma(n, p, basesize):
+	return (( -(number.inverse(n, p))) % p)
+	t = 1
+	nmodb = n%basesize
+	b = 2**basesize
+	for i in range(1, basesize):
+		t = (t*t*n)
+		t = t%b
+	return t
+
+def computeP2(n, basesize, p):
+	p2 = 1
+	for i in range(0, 2*getNumLimbs(n, basesize)*basesize):
+		p2 = (p2 + p2) % n
+	return p2
+
+def computeP(n, basesize):
+	b = 2**basesize
+	i = 1
+	while b**i < n:
+		i += 1
+	return b**i 
+
+def getNumLimbs(n, wlen):
+	return int(math.ceil(math.log(n, 2**64)))
+
+def expon(x, y, n, basesize):
+	p = computeP(n, basesize)
+	p2 = computeP2(n, basesize, p)
+	w = computeSigma(n, p, basesize)
+	t = montMul(w, p, 1, p2%n, n)
+	xhat = montMul(w, p, x, p2%n, n)
+	print xhat
+	for i in reversed(range(0, int(math.ceil(math.log(y, 2))))):
+		print(i)
+		t = montMul(w, p, t, t, n)
+		if (y & (1<<i)) != 0:
+			t = montMul(w, p, t, xhat, n)
+		#print t
+	return montMul(w,p,t,1,n)
+
+
+if ( __name__ == "__main__" ) :
+
+	x = 14777912434722484012795150747433197744767136897217162407762927865455435847145735686915331827545464755796807234471871479852466934757357239598392518626677060360692000372538879569563006291417336461597266487127830346581372131687317440322423575802518877104255558126974558449677855388857647750426674157655378030063
+	y = 82066906503981187431857367827616517547742026992296675269535396889324683244050948742697807615775012316882267807115314093017053946984947287322227475300115586985710753917221939474324908096704688427033412500308916929487658423364451145032970068348791689894471753550784886649253371303609895809157663585850520032959 
+  	n = 90294311424406673228338297200726006944631753630845809306519637227101667889745832477888085683126958592769170203506611034167697397910397535705315263098112563532540303944988972364693194890784306135883557032253343377823721157298262490305418829735604172267015074712472931277122629288704655390257429427388301857563 
+	r = expon(x, y, n, 64)
+	print r
