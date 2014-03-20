@@ -7,7 +7,7 @@ def interact( G ) :
   while (len(stringver)) != 256:
     stringver = '0' + stringver
   
-  print "Length = %d" % len(stringver)
+  #print "Length = %d" % len(stringver)
   target_in.write( "%s\n" % stringver ) ; target_in.flush()
   #print "string sent %s" % stringver
   if(len(stringver) != 256):
@@ -44,26 +44,26 @@ def attack(publicfile) :
     f1 = 2
     cP = pow_mod(f1,e,N)
     cP = (cP * c) %N
-    print "cP = %X\n" % cP
+  #  print "cP = %X\n" % cP
     print "f1 = %d" % f1
     r = interact(cP)
     while r != 1:
         f1 *= 2
         cP = pow_mod(f1,e,N)
         cP = (cP * c) % N
-        print "cP = %X\n" % cP
-        print "f1 = %d" % f1
+       # print "cP = %X\n" % cP
+       # print "f1 = %d" % f1
         r = interact(cP)
 
 
     print "B = %X\n" %B
     print "f1 = %X\n" %f1 
-    print "stage 1 r = %X\n"% r
+  #  print "stage 1 r = %X\n"% r
     
-    print "stage 1 N = %X\n"% N
+   # print "stage 1 N = %X\n"% N
     #step2
     f2 = int(((N+B)//B) *  (f1//2))
-    print "f2 = %X" % f2
+    print "f2 before = %d" % f2
     
     cP = pow_mod(f2,e,N)
     cP = (cP * c) % N
@@ -78,22 +78,23 @@ def attack(publicfile) :
        # print "cP = %X\n" % cP
         r = interact(cP)
         f2 = f2 + (f1/2)
-        print "f2 = %d" % f2
+        print "f2 in = %d" % f2
+    print "f2 after = %d" % f2
 
-    print "count = %d" % count
-    print "step 2 r = %d" % r 
+    #print "count = %d" % count
+    #print "step 2 r = %d" % r 
 
     #step3 
     mMin = ceildiv(N,f2)
     mMax = ((N+B)//f2)
     print " max = %X \n" % mMax
     print " min = %X \n" % mMin
-    print " delta = %X \n" % (mMax-mMin)
+    #print " delta = %X \n" % (mMax-mMin)
 
-    print "part 3 start = %X \n" % (f2 * (mMax - mMin))
-    print " B = %X \n" % (B - (f2 * (mMax - mMin)))
+    #print "part 3 start = %X \n" % (f2 * (mMax - mMin))
+    #print " B = %X \n" % (B - (f2 * (mMax - mMin)))
     
-    print " c = %X \n" % c
+    #print " c = %X \n" % c
 
     while mMin < mMax:
         mDelta = mMax - mMin
