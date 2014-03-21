@@ -88,26 +88,46 @@ def montMul(N, x, y, omega):
 	return r
 
 
-def montExp(N, x, y):
+def montMulRedCheck(N, x, y, omega):
+	r = 0
+	b = 2**64
+	x0 = getLimbI(x, 0)
+	for i in range(0, int(getLN(N))):
+		u = ((getLimbI(r,0) + getLimbI(y,i)*x0) * omega)%b
+		r = (r + (getLimbI(y,i)*x) + u*N)/b
+		red = False
+		if r >= N:
+			red = True
+			r = r-N
+	return r, red
+
+
+
+def montExp(N, x, binY, sizeOfY):
 	pSquared = calcPSquared(N)
 	omega = calcOmega(N)
 	t = montMul(N, 1, pSquared, omega)
 	xHat = montMul(N, x, pSquared, omega)
-	binY = bin(y).lstrip("0b")
-	sizeOfY = math.ceil(math.log(y, 2))
-	for i in range(int(sizeOfY)-1, -1, -1):
-		t = montMul(N, t,t, omega)
-		if (y & (1<<i)) != 0:
+	#print binY
+	for i in range(0, int(sizeOfY)+1):
+		#STOP HERE
+		t, red = montMulRedCheck(N, t,t, omega)
+
+		#STOP HERE?
+		if binY[i] == '1':
 			t = montMul(N, t, xHat, omega)
-	#	else:
-		#	print'hi'
-		#print t
 	t = montMul(N, t, 1, omega)
-	return t
+	return t, red
 
 
 
-
+def getAverage(l):
+	if len(l) == 0:
+		return 0
+	av = 0
+	for i in range (0, len(l)):
+		av += l[i]
+	return av/len(l)
 
 def attack(A) :
 	with open(A) as thefile:
@@ -116,13 +136,50 @@ def attack(A) :
 	n = lines[0]
 	e = lines[1]
 
+	nP = int(n, 16)
+	eP = int(e, 16)
+
 
 	tList = [] 
 	for i in range (0, 10000):
 		c = '%128x' % random.randrange(16**128)
 		t ,r = interact(c)
 		tList.append([c, t])
-	print tList[4][1]
+	print tList[34]
+	print tList[34]
+	K = '1'
+	kSize = 1
+	for i in range(0, 64):
+		kSize += 1
+		b1 = []
+		b2 = []
+		b3 = []
+		b4 = []	
+		print('here')
+		for i in range (0, 10000):
+			c = int(tList[i][0], 16)
+			time = int(tList[i][1], 16)
+			K1 = K+'1'+'s'  
+			t, red = montExp(nP, c, K1, kSize)
+			if(red == True):
+				b1.append(time)
+			else:
+				b2.append(time)
+			K0 = K + '0' + 's'
+			t, red2 = montExp(nP, c, K0, kSize)
+			if(red2 == True):
+				b3.append(time)
+			else:
+				b4.append(time)
+		chance1 = abs(getAverage(b1) - getAverage(b2))
+		chance0 = abs(getAverage(b3) - getAverage(b4))
+		if(chance0 > chance1):
+			K = K0[:-1]
+		else:
+			K = K1[:-1]
+		print K
+
+
 
 
 
