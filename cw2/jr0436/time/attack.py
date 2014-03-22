@@ -37,6 +37,25 @@ def getLimbI(x, i):
 	return r
 
 
+def montExpOld(N, x, y):
+	pSquared = calcPSquared(N)
+	omega = calcOmega(N)
+	t = montMul(N, 1, pSquared, omega)
+	xHat = montMul(N, x, pSquared, omega)
+	print t
+	print xHat
+	sizeOfY = math.ceil(math.log(y, 2))
+	binY = bin(y).lstrip("0b")
+	binY =  format(int(binY, 2), '0'+ str(int(sizeOfY)) + 'b')
+	count = 0
+	for i in range(0, int(sizeOfY)):
+		t = montMul(N, t,t, omega)
+		#print binY[i]
+		if binY[i] == '1':
+			t = montMul(N, t, xHat, omega)
+	t = montMul(N, t, 1, omega)
+	#print count
+	return t
 
 
 
@@ -112,14 +131,12 @@ def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0):
 			#binY = binY[:-1] + '1'
 			#print 'new 1 binY %s' %binY	
 	tTemp = montMul(N, t,t, omega)
-	tTemp = montMul(N, tTemp, xHat, omega)
-	tTemp, red1 = montMulRedCheck(N, tTemp,tTemp, omega)
-	tList1.append(tTemp)
+	t1 = montMul(N, tTemp, xHat, omega)
+	t1, red1 = montMulRedCheck(N, t1,t1, omega)
+	tList1.append(t1)
 
-
-	tTemp = montMul(N, t,t, omega)
-	tTemp, red0 = montMulRedCheck(N, tTemp,tTemp, omega)
-	tList0.append(tTemp)
+	t0, red0 = montMulRedCheck(N, tTemp,tTemp, omega)
+	tList0.append(t0)
 
 	
 			
@@ -137,16 +154,24 @@ def getAverage(l):
 		av += l[i]
 	return av/len(l)
 
-def attack(A) :
+def attack(A, C) :
 	with open(A) as thefile:
 	    lines = thefile.readlines()  
 
 	n = lines[0]
 	e = lines[1]
+	with open(C) as thefile:
+		linesC = thefile.readlines()
+
 
 	nP = int(n, 16)
 	eP = int(e, 16)
 
+	#kMaybe = int('10110110110110100100111000100101101100001111100100000001100001001', 2)
+	#print kMaybe
+	#a =  montExpOld(nP, montExpOld(nP, 2314234, kMaybe), eP)
+	#print 'a = %d' %a
+	#exit()
 	pSquared = calcPSquared(nP)
 	omega = calcOmega(nP)
 	t = montMul(nP, 1, pSquared, omega)
@@ -156,7 +181,9 @@ def attack(A) :
 	tList = []
 	xList = []
 	for i in range (0, 10000):
-		c = '%128x' % random.randrange(16**128)
+		c = linesC[i]
+		#c = '%128x' % random.randrange(16**128)
+		#print c
 		w ,r = interact(c)
 		ctimeList.append([c, w])
 		xHat = montMul(nP, int(c, 16), pSquared, omega)
@@ -165,12 +192,16 @@ def attack(A) :
 		xList.append(xHat)
 		tList.append(tTemp)
 
+	#	print 'xHat 1 = %d' %xHat
+		#print 'tTemp 1 = %d' %tTemp
+
 
 
 
 	K = '1'
 	kSize = 1
 	for i in range(0, 64):
+		print ('NEW NUMBER\n')
 		kSize += 1
 		b1 = []
 		b2 = []
@@ -193,11 +224,11 @@ def attack(A) :
 				b3.append(time)
 			else:
 				b4.append(time)
-		chance1 = getAverage(b1) - getAverage(b2)
-		chance0 = getAverage(b3) - getAverage(b4)
+		chance1 = abs(getAverage(b1) - getAverage(b2))
+		chance0 = abs(getAverage(b3) - getAverage(b4))
 		if(chance0 > chance1):
 			K = K + '0'
-			print 'Differnce was %d' %chance0
+			print 'Difference was %d' %chance0
 			tList = tList0
 		else:
 			K = K + '1'
@@ -219,7 +250,7 @@ if ( __name__ == "__main__" ) :
   target_out = target.stdout
   target_in  = target.stdin
 
-  attack(sys.argv[2])
+  attack(sys.argv[2], sys.argv[3])
   #result = montExp(N, x, y)
   #print('result = %d' %result)
 
