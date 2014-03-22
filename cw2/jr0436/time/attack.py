@@ -42,8 +42,8 @@ def montExpOld(N, x, y):
 	omega = calcOmega(N)
 	t = montMul(N, 1, pSquared, omega)
 	xHat = montMul(N, x, pSquared, omega)
-	print t
-	print xHat
+#	print t
+#	print xHat
 	sizeOfY = math.ceil(math.log(y, 2))
 	binY = bin(y).lstrip("0b")
 	binY =  format(int(binY, 2), '0'+ str(int(sizeOfY)) + 'b')
@@ -168,11 +168,7 @@ def attack(A, C) :
 	nP = int(n, 16)
 	eP = int(e, 16)
 
-	kMaybe = int('1011110110000110111101011010110011001001110111110000101111101111', 2)
-
-	print kMaybe
-	a =  montExpOld(nP, montExpOld(nP, 2314234, eP), kMaybe)
-	print 'a = %d' %a
+	
 	exit()
 	pSquared = calcPSquared(nP)
 	omega = calcOmega(nP)
@@ -230,15 +226,17 @@ def attack(A, C) :
 		chance0 = getAverage(b3) - getAverage(b4)
 		if(chance0 > chance1):
 			K = K + '0'
-			print 'Difference was %d' %chance0
+			#print 'Difference was %d' %chance0
 			tList = tList0
 		else:
 			K = K + '1'
-			print 'Difference was %d'%chance1
+			#print 'Difference was %d'%chance1
 			tList = tList1
 		print 'K = %s' %K
 
-
+	kMaybe = int(K, 2)
+	a =  montExpOld(nP, montExpOld(nP, 2314234, eP), kMaybe)
+	print 'a = %d' %a
 
 
 
