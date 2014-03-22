@@ -93,17 +93,19 @@ def montExp(N, x, y):
 	omega = calcOmega(N)
 	t = montMul(N, 1, pSquared, omega)
 	xHat = montMul(N, x, pSquared, omega)
+	print t
+	print xHat
 	sizeOfY = math.ceil(math.log(y, 2))
 	binY = bin(y).lstrip("0b")
 	binY =  format(int(binY, 2), '0'+ str(int(sizeOfY)) + 'b')
 	count = 0
 	for i in range(0, int(sizeOfY)):
 		t = montMul(N, t,t, omega)
-		print binY[i]
+		#print binY[i]
 		if binY[i] == '1':
 			t = montMul(N, t, xHat, omega)
 	t = montMul(N, t, 1, omega)
-	print count
+	#print count
 	return t
 
 
