@@ -94,7 +94,6 @@ def calcOmega(N):
 	return t
 #def montgomery():
 
-
 def montMul(N, x, y, omega):
 	r = 0
 	b = 2**64
@@ -122,29 +121,21 @@ def montMulRedCheck(N, x, y, omega):
 
 
 
-def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0):
-
+def montExp(N, x, binY, sizeOfY):
+	pSquared = calcPSquared(N)
+	omega = calcOmega(N)
+	t = montMul(N, 1, pSquared, omega)
+	xHat = montMul(N, x, pSquared, omega)
 	#print binY
-	#for i in range(0, sizeOfY):
-		#if (i == sizeOfY-1):
-			#print 'old binY %s' %binY	
-			#binY = binY[:-1] + '1'
-			#print 'new 1 binY %s' %binY	
-	tTemp = montMul(N, t,t, omega)
-	t1 = montMul(N, tTemp, xHat, omega)
-	tList1.append(t1)
-	t1, red1 = montMulRedCheck(N, t1,t1, omega)
+	for i in range(0, int(sizeOfY)+1):
+		#STOP HERE
+		t, red = montMulRedCheck(N, t,t, omega)
 
-	tList0.append(tTemp)
-	t0, red0 = montMulRedCheck(N, tTemp,tTemp, omega)
-
-
-	
-			
-
-	#t = montMul(N, t, 1, omega)
-	return t, red1, red0, tList1, tList0
-
+		#STOP HERE?
+		if binY[i] == '1':
+			t = montMul(N, t, xHat, omega)
+	t = montMul(N, t, 1, omega)
+	return t, red
 
 
 def getAverage(l):
@@ -168,76 +159,46 @@ def attack(A, C) :
 	nP = int(n, 16)
 	eP = int(e, 16)
 
-	kMaybe = int('1011110110000110111101011010110011001001110111110000101111101111', 2)
-
-	print kMaybe
-	a =  montExpOld(nP, montExpOld(nP, 2314234, eP), kMaybe)
-	print 'a = %d' %a
-	exit()
-	pSquared = calcPSquared(nP)
-	omega = calcOmega(nP)
-	t = montMul(nP, 1, pSquared, omega)
-
-
-	ctimeList = [] 
-	tList = []
-	xList = []
+	tList = [] 
 	for i in range (0, 10000):
-		#c = linesC[i]
 		c = '%128x' % random.randrange(16**128)
-		#print c
-		w ,r = interact(c)
-		ctimeList.append([c, w])
-		xHat = montMul(nP, int(c, 16), pSquared, omega)
-		tTemp = montMul(nP, t,t, omega)
-		tTemp = montMul(nP, tTemp, xHat, omega)
-		xList.append(xHat)
-		tList.append(tTemp)
-
-	#	print 'xHat 1 = %d' %xHat
-		#print 'tTemp 1 = %d' %tTemp
-
-
-
-
+		t ,r = interact(c)
+		tList.append([c, t])
+	print tList[34]
+	print tList[34]
 	K = '1'
 	kSize = 1
 	for i in range(0, 64):
-		#print ('NEW NUMBER\n')
 		kSize += 1
 		b1 = []
 		b2 = []
 		b3 = []
-		b4 = []
-		tList1 = []
-		tList0 = []	
+		b4 = []	
+		print('here')
 		for i in range (0, 10000):
-			c = int(ctimeList[i][0], 16)
-			time = int(ctimeList[i][1], 16) 
-			xHat = xList[i]
-			t = tList[i]
-			Ktemp = K
-			t, red1, red0, tList1, tList0 = montExp(nP, c, Ktemp, kSize, pSquared, omega, t, xHat, tList1, tList0)
-			if(red1 == True):
+			c = int(tList[i][0], 16)
+			time = int(tList[i][1], 16)
+			K1 = K+'1'+'s'  
+			t, red = montExp(nP, c, K1, kSize)
+			if(red == True):
 				b1.append(time)
 			else:
 				b2.append(time)
-			if(red0 == True):
+			K0 = K + '0' + 's'
+			t, red2 = montExp(nP, c, K0, kSize)
+			if(red2 == True):
 				b3.append(time)
 			else:
 				b4.append(time)
-		chance1 = getAverage(b1) - getAverage(b2)
-		chance0 = getAverage(b3) - getAverage(b4)
+		chance1 = abs(getAverage(b1) - getAverage(b2))
+		chance0 = abs(getAverage(b3) - getAverage(b4))
 		if(chance0 > chance1):
-			K = K + '0'
-			print 'Difference was %d' %chance0
-			tList = tList0
+			K = K0[:-1]
+			print ('difference was %d' %chance0)
 		else:
-			K = K + '1'
-			print 'Difference was %d'%chance1
-			tList = tList1
-		print 'K = %s' %K
-
+			K = K1[:-1]
+			print ('difference was %d' %chance1)
+		print K
 
 
 
