@@ -109,15 +109,25 @@ def montExp(N, x, binY, sizeOfY):
 	t = montMul(N, 1, pSquared, omega)
 	xHat = montMul(N, x, pSquared, omega)
 	#print binY
-	for i in range(0, int(sizeOfY)+1):
-		#STOP HERE
-		t, red = montMulRedCheck(N, t,t, omega)
-
-		#STOP HERE?
-		if binY[i] == '1':
+	for i in range(0, sizeOfY):
+		if (i == sizeOfY-1):	
+			binY = binY[:-1] + '1'
+			t = montMul(N, t,t, omega)
 			t = montMul(N, t, xHat, omega)
+			t, red1 = montMulRedCheck(N, t,t, omega)
+
+			binY = binY[:-1] + '0'
+			t = montMul(N, t,t, omega)
+			t, red0 = montMulRedCheck(N, t,t, omega)
+		else:
+			t = montMul(N, t,t, omega)
+			if binY[i] == '1':
+				t = montMul(N, t, xHat, omega)
+
+			
+
 	t = montMul(N, t, 1, omega)
-	return t, red
+	return t, red1, red0
 
 
 
@@ -145,8 +155,6 @@ def attack(A) :
 		c = '%128x' % random.randrange(16**128)
 		t ,r = interact(c)
 		tList.append([c, t])
-	print tList[34]
-	print tList[34]
 	K = '1'
 	kSize = 1
 	for i in range(0, 64):
@@ -155,28 +163,27 @@ def attack(A) :
 		b2 = []
 		b3 = []
 		b4 = []	
-		print('here')
 		for i in range (0, 10000):
 			c = int(tList[i][0], 16)
-			time = int(tList[i][1], 16)
-			K1 = K+'1'+'s'  
-			t, red = montExp(nP, c, K1, kSize)
-			if(red == True):
+			time = int(tList[i][1], 16)  
+			Ktemp = K + '?'
+			t, red1, red0 = montExp(nP, c, Ktemp, kSize)
+			if(red1 == True):
 				b1.append(time)
 			else:
 				b2.append(time)
-			K0 = K + '0' + 's'
-			t, red2 = montExp(nP, c, K0, kSize)
-			if(red2 == True):
+			if(red0 == True):
 				b3.append(time)
 			else:
 				b4.append(time)
 		chance1 = abs(getAverage(b1) - getAverage(b2))
 		chance0 = abs(getAverage(b3) - getAverage(b4))
 		if(chance0 > chance1):
-			K = K0[:-1]
+			K = K + '0'
+			print 'Differnce was %d' %chance0
 		else:
-			K = K1[:-1]
+			K = K + '1'
+			print 'Difference was %d'%chance1
 		print K
 
 
