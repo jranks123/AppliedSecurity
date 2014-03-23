@@ -16,7 +16,8 @@ def ceildiv(a, b):
 
 
 
-
+#This function is only used to check the final result, a more efficient solution is used during
+#the calculation of the key
 def montExpOld(N, x, y, pSquared, p, omega):
 	t = newMontMul(N, 1, pSquared, p, omega)
 	xHat = newMontMul(N, x, pSquared, p, omega)
@@ -34,12 +35,12 @@ def montExpOld(N, x, y, pSquared, p, omega):
 	return t
 
 
-
+#get the length of a base 2^(base) number
 def getLN(x, base):
 	return math.ceil(math.log(x, 2**base))
 
 
-
+#interact with the outside program
 def interact( G ) :
 	#print(G)
 	# Send      G      to   attack target.
@@ -51,7 +52,7 @@ def interact( G ) :
 	return(t,r)
 
 
-
+#calculate P Squared
 def calcPSquared(N, base):
 	t = 1
 	r = 2*getLN(N, base)*base
@@ -59,6 +60,7 @@ def calcPSquared(N, base):
 		t = (t +t)%N
 	return t
 
+#calculate P
 def calcP(N, base):
 	b = 2**base
 	i = 1
@@ -67,11 +69,11 @@ def calcP(N, base):
 	r = b**i
 	return r
 
-
+#calculate omega
 def newCalcOmega(N, p):
 	return (( -(number.inverse(N, p))) % p)
 
-
+#perform montgomery multiplication
 def newMontMul(N, x,y, p, omega):
 	r = x*y
 	r = (r + ((r*omega%p)*N))/p
@@ -79,6 +81,8 @@ def newMontMul(N, x,y, p, omega):
 		r = r-N
 	return r
 
+
+#perform montgomery multiplication, checking for a reduction and returning a True flag if so
 def newMontMulRedCheck(N, x,y, p, omega):
 	r = x*y
 	r = (r + ((r*omega%p)*N))/p
@@ -89,6 +93,7 @@ def newMontMulRedCheck(N, x,y, p, omega):
 	return r, red
 
 
+#perform montgomery exponention
 def montExp(N, x, binY, sizeOfY, pSquared, t, xHat, tList1, tList0, p, newOmega):
 	tTemp = newMontMul(N, t,t, p, newOmega)
 	t1 = newMontMul(N, tTemp, xHat, p, newOmega)
@@ -100,7 +105,7 @@ def montExp(N, x, binY, sizeOfY, pSquared, t, xHat, tList1, tList0, p, newOmega)
 	return t, red1, red0, tList1, tList0
 
 
-
+#return the average of the bins
 def getAverage(l):
 	if len(l) == 0:
 		return 0
@@ -108,6 +113,8 @@ def getAverage(l):
 	for i in range (0, len(l)):
 		av += l[i]
 	return av/len(l)
+
+
 
 def attack(A, numberOfSamples) :
 	with open(A) as thefile:
@@ -126,6 +133,8 @@ def attack(A, numberOfSamples) :
 	ctimeList = [] 
 	tList = []
 	xList = []
+
+	#create samples, do initial calcualtions of t-hat and x-hat
 	for i in range (0, numberOfSamples):
 		c = random.randrange(16**128)		
 		cHex = '%128x' % c
@@ -141,8 +150,9 @@ def attack(A, numberOfSamples) :
 	found = False
 	K = '1'
 	kSize = 1
+
+
 	while found == False:
-		#print ('NEW NUMBER\n')
 		kSize += 1
 		b1 = []
 		b2 = []
@@ -179,6 +189,7 @@ def attack(A, numberOfSamples) :
 			greater = chance1
 		print 'K = %s' %K
 
+		#check if current key is the final key
 		number = 2314234
 		kMaybe1 = int(K[:-1]+'1', 2)
 		if montExpOld(nP, montExpOld(nP, number, eP, pSquared, p, newOmega), kMaybe1, pSquared, p, newOmega) == number:
