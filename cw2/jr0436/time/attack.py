@@ -40,9 +40,10 @@ def getLimbI(x, i):
 
 def montExpOld(N, x, y):
 	pSquared = calcPSquared(N)
-	omega = calcOmega(N)
-	t = montMul(N, 1, pSquared, omega)
-	xHat = montMul(N, x, pSquared, omega)
+	p = calcP(N, 64)
+	omega = newCalcOmega(N, p)
+	t = newMontMul(N, 1, pSquared, p, omega)
+	xHat = newMontMul(N, x, pSquared, p, omega)
 #	print t
 #	print xHat
 	sizeOfY = math.ceil(math.log(y, 2))
@@ -50,11 +51,11 @@ def montExpOld(N, x, y):
 	binY =  format(int(binY, 2), '0'+ str(int(sizeOfY)) + 'b')
 	count = 0
 	for i in range(0, int(sizeOfY)):
-		t = montMul(N, t,t, omega)
+		t = newMontMul(N, t,t, p, omega)
 		#print binY[i]
 		if binY[i] == '1':
-			t = montMul(N, t, xHat, omega)
-	t = montMul(N, t, 1, omega)
+			t = newMontMul(N, t, xHat, p, omega)
+	t = newMontMul(N, t, 1, p, omega)
 	#print count
 	return t
 
@@ -107,17 +108,15 @@ def calcOmega(N):
 	return t
 #def montgomery():
 
-def newMontMul(N, x,y, p):
+def newMontMul(N, x,y, p, omega):
 	r = x*y
-	omega = newCalcOmega(N, p)
 	r = (r + ((r*omega%p)*N))/p
 	if r >= N:
 		r = r-N
 	return r
 
-def newMontMulRedCheck(N, x,y, p):
+def newMontMulRedCheck(N, x,y, p, omega):
 	r = x*y
-	omega = newCalcOmega(N, p)
 	r = (r + ((r*omega%p)*N))/p
 	red = False
 	if r >= N:
@@ -125,42 +124,18 @@ def newMontMulRedCheck(N, x,y, p):
 		r = r-N
 	return r, red
 
-def montMul(N, x, y, omega):
-	r = 0
-	b = 2**64
-	x0 = getLimbI(x, 0)
-	for i in range(0, int(getLN(N))):
-		u = ((getLimbI(r,0) + getLimbI(y,i)*x0) * omega)%b
-		r = (r + (getLimbI(y,i)*x) + u*N)/b
-		if r >= N:
-			r = r-N
-	return r
-
-
-def montMulRedCheck(N, x, y, omega):
-	r = 0
-	b = 2**64
-	x0 = getLimbI(x, 0)
-	for i in range(0, int(getLN(N))):
-		u = ((getLimbI(r,0) + getLimbI(y,i)*x0) * omega)%b
-		r = (r + (getLimbI(y,i)*x) + u*N)/b
-		red = False
-		if r >= N:
-			red = True
-			r = r-N
-	return r, red
 
 
 
 
-def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0, p):
-	tTemp = newMontMul(N, t,t, p)
-	t1 = newMontMul(N, tTemp, xHat, p)
+def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0, p, newOmega):
+	tTemp = newMontMul(N, t,t, p, newOmega)
+	t1 = newMontMul(N, tTemp, xHat, p, newOmega)
 	tList1.append(t1)
-	t1, red1 = newMontMulRedCheck(N, t1,t1, p)
+	t1, red1 = newMontMulRedCheck(N, t1,t1, p, newOmega)
 
 	tList0.append(tTemp)
-	t0, red0 = newMontMulRedCheck(N, tTemp,tTemp, p)
+	t0, red0 = newMontMulRedCheck(N, tTemp,tTemp, p, newOmega)
 	return t, red1, red0, tList1, tList0
 
 
@@ -189,10 +164,10 @@ def attack(A, numberOfSamples) :
 
 	pSquared = calcPSquared(nP)
 	p = calcP(nP, 64)
-
+	newOmega = newCalcOmega(nP, p)
 	
 	omega = calcOmega(nP)
-	t = newMontMul(nP, 1, pSquared, p)
+	t = newMontMul(nP, 1, pSquared, p, newOmega)
 
 
 	
@@ -202,12 +177,12 @@ def attack(A, numberOfSamples) :
 	tList = []
 	xList = []
 	for i in range (0, numberOfSamples):
-		c = '%128x' % random.randrange(16**128)
+		c = '%128X' % random.randrange(16**128)
 		w ,r = interact(c)
 		ctimeList.append([c, w])
-		xHat = newMontMul(nP, int(c, 16), pSquared, p)
-		tTemp = newMontMul(nP, t,t, p)
-		tTemp = newMontMul(nP, tTemp, xHat, p)
+		xHat = newMontMul(nP, int(c, 16), pSquared, p, newOmega)
+		tTemp = newMontMul(nP, t,t, p, newOmega)
+		tTemp = newMontMul(nP, tTemp, xHat, p, newOmega)
 		xList.append(xHat)
 		tList.append(tTemp)
 
@@ -234,7 +209,7 @@ def attack(A, numberOfSamples) :
 			xHat = xList[i]
 			t = tList[i]
 			Ktemp = K
-			t, red1, red0, tList1, tList0 = montExp(nP, c, Ktemp, kSize, pSquared, omega, t, xHat, tList1, tList0, p)
+			t, red1, red0, tList1, tList0 = montExp(nP, c, Ktemp, kSize, pSquared, omega, t, xHat, tList1, tList0, p, newOmega)
 			if(red1 == True):
 				b1.append(time)
 			else:
@@ -288,5 +263,4 @@ if ( __name__ == "__main__" ) :
   attack(sys.argv[2], numberOfSamples)
   #result = montExp(N, x, y)
   #print('result = %d' %result)
-
 
