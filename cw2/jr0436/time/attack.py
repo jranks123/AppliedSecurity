@@ -28,11 +28,9 @@ def montExpOld(N, x, y, pSquared, p, omega):
 	count = 0
 	for i in range(0, int(sizeOfY)):
 		t = newMontMul(N, t,t, p, omega)
-		#print binY[i]
 		if binY[i] == '1':
 			t = newMontMul(N, t, xHat, p, omega)
 	t = newMontMul(N, t, 1, p, omega)
-	#print count
 	return t
 
 
@@ -74,15 +72,6 @@ def newCalcOmega(N, p):
 	return (( -(number.inverse(N, p))) % p)
 
 
-def calcOmega(N, base):
-	t = 1
-	b = pow(2,base)
-	for i in range(0, base-1):
-		t = (t*t*N)%b
-	t = (-t)%b
-	return t
-#def montgomery():
-
 def newMontMul(N, x,y, p, omega):
 	r = x*y
 	r = (r + ((r*omega%p)*N))/p
@@ -100,10 +89,7 @@ def newMontMulRedCheck(N, x,y, p, omega):
 	return r, red
 
 
-
-
-
-def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0, p, newOmega):
+def montExp(N, x, binY, sizeOfY, pSquared, t, xHat, tList1, tList0, p, newOmega):
 	tTemp = newMontMul(N, t,t, p, newOmega)
 	t1 = newMontMul(N, tTemp, xHat, p, newOmega)
 	tList1.append(t1)
@@ -126,29 +112,17 @@ def getAverage(l):
 def attack(A, numberOfSamples) :
 	with open(A) as thefile:
 	    lines = thefile.readlines()  
-
 	base = int(platform.architecture()[0][:-3])
 	n = lines[0]
 	e = lines[1]
-
-
 	nP = int(n, 16)
 	eP = int(e, 16)
 	lN = getLN(nP, base)
 	b = 2**base
-
-
 	pSquared = calcPSquared(nP, base)
 	p = calcP(nP, base)
 	newOmega = newCalcOmega(nP, p)
-	
-	omega = calcOmega(nP, base)
 	t = newMontMul(nP, 1, pSquared, p, newOmega)
-
-
-	
-
-
 	ctimeList = [] 
 	tList = []
 	xList = []
@@ -162,10 +136,6 @@ def attack(A, numberOfSamples) :
 		tTemp = newMontMul(nP, tTemp, xHat, p, newOmega)
 		xList.append(xHat)
 		tList.append(tTemp)
-
-	#	print 'xHat 1 = %d' %xHat
-		#print 'tTemp 1 = %d' %tTemp
-
 
 
 	found = False
@@ -186,7 +156,7 @@ def attack(A, numberOfSamples) :
 			xHat = xList[i]
 			t = tList[i]
 			Ktemp = K
-			t, red1, red0, tList1, tList0 = montExp(nP, c, Ktemp, kSize, pSquared, omega, t, xHat, tList1, tList0, p, newOmega)
+			t, red1, red0, tList1, tList0 = montExp(nP, c, Ktemp, kSize, pSquared, t, xHat, tList1, tList0, p, newOmega)
 			if(red1 == True):
 				b1.append(time)
 			else:
@@ -212,15 +182,15 @@ def attack(A, numberOfSamples) :
 		number = 2314234
 		kMaybe1 = int(K[:-1]+'1', 2)
 		if montExpOld(nP, montExpOld(nP, number, eP, pSquared, p, newOmega), kMaybe1, pSquared, p, newOmega) == number:
-			print 'the key is %s' %K[:-1]+'1'
+			print 'the key is ' + str(hex(int(K[:-1]+'1', 2))).rstrip("L").lstrip("0x") or "0"
 			found = True
 			exit()
 		kMaybe0 = int(K[:-1]+'0', 2)
 		if montExpOld(nP, montExpOld(nP, number, eP, pSquared, p, newOmega), kMaybe0, pSquared, p, newOmega) == number:
-			print 'the key is %s' %K[:-1]+'0'
+			print 'the key is ' + str(hex(int(K[:-1]+'0', 2))).rstrip("L").lstrip("0x") or "0"
 			found = True
 			exit()	
-		if greater< 3:
+		if greater< 2:
 			print 'failed with %d numberOfSamples, trying again with %s' %(numberOfSamples, numberOfSamples + 1000)
 			attack(A, numberOfSamples+1000)
 		
@@ -235,10 +205,10 @@ if ( __name__ == "__main__" ) :
 
   # Construct handles to attack target standard input and output.
 
+
   target_out = target.stdout
   target_in  = target.stdin
   numberOfSamples = 6000
   attack(sys.argv[2], numberOfSamples)
-  #result = montExp(N, x, y)
-  #print('result = %d' %result)
+
 

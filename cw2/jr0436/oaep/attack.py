@@ -26,9 +26,9 @@ def interact( G ) :
 	return ( t )
 
 def I2OSP(m, k):
-	if(m > pow(256, k)):
-		print('integer too long')
-		return
+	#if(m > pow(256, k)):
+	#	print('integer too long')
+    #	return
 	m = ('%X' %m)
 	m = m.zfill(k)
 	return m
@@ -62,7 +62,7 @@ def unpad(m,k):
   	seed = hex(int(seedMask, 16) ^ int(maskedSeed, 16)).rstrip("L").lstrip("0x") or "0"
   	dbMask = MGF(seed, k-hLen-2)
  	DB = hex(int(maskedDB, 16) ^ int(dbMask, 16)).rstrip("L").lstrip("0x") or "0" 	
-  	print(DB)
+  	print('Message = ' + str(DB))
 
 
 
@@ -98,19 +98,18 @@ def attack(A) :
 		r = hex(int(r)).rstrip("L").lstrip("0x") or "0"
 		result = (interact(r.zfill(256)))
 
-	print "f1 = %d" %f1
+	print "f1 after Stage 1 = %d" %f1
 
 	#STAGE2
 	f2 = int(math.floor(((nP+B)//B))*(f1/2))
-	print "f2 before = " + str(f2)
+	print "f2 before Stage 2 = " + str(f2)
 	while(result == 1):
 		f2New = (pow(f2, eP, nP)*cP)%nP
 		f2Hex = hex(int(f2New)).rstrip("L").lstrip("0x") or "0"
 		result = (interact(f2Hex.zfill(256)))
 		if result == 1 :
 			f2 = f2+(f1/2)
-		print "f2 in = " + str(f2)
-	print "f2 = " + str(f2)
+	print "f2 after Stage 2 = " + str(f2)
 
 	#stage3
 	mMin = ceildiv(nP, f2)
@@ -128,11 +127,14 @@ def attack(A) :
 			mMin = ceildiv((i*nP)+B, f3)
 		elif result == 2:
 			mMax = ((i*nP)+B)//f3
-		print(mMax-mMin)
 		if(mMin-mMax == 0):
 			break
 
-	print('%X' %mMax)
+	print('f3 after Stage 3 = ' + str(f3))
+  	
+
+
+	unpad(mMax, int(k))
 	
 
 	
@@ -147,8 +149,6 @@ if ( __name__ == "__main__" ) :
   target_out = target.stdout
   target_in  = target.stdin
 
-  mMax = 347773833112666067882250428860237828536284751851937774998301349400582842266125231652144052973844735641707958243515945426514899866621565894750281126530384065592715203455730702689341777829005478835703191583922036885261978659783344533432274604031718486439445004108324023045369998063524769702384465676869902357
-  unpad(mMax, 128)
-  #m = I2OSP(mMax, 127)
   # Execute a function representing the attacker.
-  #attack(sys.argv[2])
+
+  attack(sys.argv[2])

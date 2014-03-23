@@ -126,6 +126,7 @@ void newPow(mpz_t t, mpz_t x, mpz_t y, mpz_t N){
 }
 
 
+
 //This function calculates the montgomery parameter omega
 void calculateOmega(mpz_t x, mpz_t N, mpz_t b){
 //  gmp_printf("%Zd\n", N);
@@ -153,6 +154,8 @@ void calculatePSquared(mpz_t t, mpz_t N){
     int i;
     int w = 64;
     size_t nx = mpz_size( N ); 
+
+    int x = w*nx*2;
     for(i = 0; i < w*nx*2; i++){
         mpz_add(t, t, t);
         mpz_mod(t, t, N);
@@ -161,6 +164,7 @@ void calculatePSquared(mpz_t t, mpz_t N){
 
 //This function performs Montgomery Multiplication
 void ZnModMul(mpz_t result, mpz_t x, mpz_t y, mpz_t N, mpz_t omega, mpz_t u, mpz_t temp, mpz_t b, mpz_t r, unsigned long long t, unsigned long long nModB, size_t Tx){
+
   int i;
   mpz_set_ui(r, 0);
   unsigned long long x0;
@@ -207,7 +211,8 @@ void stage1() {
       lineCount = gmp_scanf( "%Zx\n%Zx\n%Zx", N, e, m );
        if(lineCount == 3){
         newPow(c, m, e, N);
-        gmp_printf( "%Zx\n", c );
+        gmp_printf( "%Zd\n%Zd\n%Zd\n%Zd\n", c, m , e, N );
+        exit(0);
        }
     } while (lineCount == 3 );
     mpz_clear( N );
