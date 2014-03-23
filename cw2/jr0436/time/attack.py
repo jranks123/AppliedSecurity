@@ -1,5 +1,6 @@
 import sys, subprocess, math, os, random
-
+from Crypto.Util import number
+  
 
 
 
@@ -83,6 +84,18 @@ def calcPSquared(N):
 		t = (t +t)%N
 	return t
 
+def calcP(N, base):
+	b = 2**base
+	i = 1
+	while b**i < N:
+		i += 1
+	r = b**i
+	return r
+
+
+def newCalcOmega(N, p):
+	return (( -(number.inverse(N, p))) % p)
+
 
 def calcOmega(N):
 	t = 1
@@ -94,6 +107,23 @@ def calcOmega(N):
 	return t
 #def montgomery():
 
+def newMontMul(N, x,y, p):
+	r = x*y
+	omega = newCalcOmega(N, p)
+	r = (r + ((r*omega%p)*N))/p
+	if r >= N:
+		r = r-N
+	return r
+
+def newMontMulRedCheck(N, x,y, p):
+	r = x*y
+	omega = newCalcOmega(N, p)
+	r = (r + ((r*omega%p)*N))/p
+	red = False
+	if r >= N:
+		red = True
+		r = r-N
+	return r, red
 
 def montMul(N, x, y, omega):
 	r = 0
@@ -122,14 +152,15 @@ def montMulRedCheck(N, x, y, omega):
 
 
 
-def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0):
-	tTemp = montMul(N, t,t, omega)
-	t1 = montMul(N, tTemp, xHat, omega)
+
+def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0, p):
+	tTemp = newMontMul(N, t,t, p)
+	t1 = newMontMul(N, tTemp, xHat, p)
 	tList1.append(t1)
-	t1, red1 = montMulRedCheck(N, t1,t1, omega)
+	t1, red1 = newMontMulRedCheck(N, t1,t1, p)
 
 	tList0.append(tTemp)
-	t0, red0 = montMulRedCheck(N, tTemp,tTemp, omega)
+	t0, red0 = newMontMulRedCheck(N, tTemp,tTemp, p)
 	return t, red1, red0, tList1, tList0
 
 
@@ -152,11 +183,20 @@ def attack(A, numberOfSamples) :
 
 	nP = int(n, 16)
 	eP = int(e, 16)
+	lN = getLN(nP)
+	b = 2**64
 
 
 	pSquared = calcPSquared(nP)
+	p = calcP(nP, 64)
+
+	
 	omega = calcOmega(nP)
-	t = montMul(nP, 1, pSquared, omega)
+	t = newMontMul(nP, 1, pSquared, p)
+
+
+	
+
 
 	ctimeList = [] 
 	tList = []
@@ -165,9 +205,9 @@ def attack(A, numberOfSamples) :
 		c = '%128x' % random.randrange(16**128)
 		w ,r = interact(c)
 		ctimeList.append([c, w])
-		xHat = montMul(nP, int(c, 16), pSquared, omega)
-		tTemp = montMul(nP, t,t, omega)
-		tTemp = montMul(nP, tTemp, xHat, omega)
+		xHat = newMontMul(nP, int(c, 16), pSquared, p)
+		tTemp = newMontMul(nP, t,t, p)
+		tTemp = newMontMul(nP, tTemp, xHat, p)
 		xList.append(xHat)
 		tList.append(tTemp)
 
@@ -194,7 +234,7 @@ def attack(A, numberOfSamples) :
 			xHat = xList[i]
 			t = tList[i]
 			Ktemp = K
-			t, red1, red0, tList1, tList0 = montExp(nP, c, Ktemp, kSize, pSquared, omega, t, xHat, tList1, tList0)
+			t, red1, red0, tList1, tList0 = montExp(nP, c, Ktemp, kSize, pSquared, omega, t, xHat, tList1, tList0, p)
 			if(red1 == True):
 				b1.append(time)
 			else:
