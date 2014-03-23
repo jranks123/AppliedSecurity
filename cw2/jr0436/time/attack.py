@@ -1,4 +1,4 @@
-import sys, subprocess, math, os, random
+import sys, subprocess, math, os, random, platform
 from Crypto.Util import number
   
 
@@ -11,37 +11,13 @@ def ceildiv(a, b):
 	else:
 		return a//b
 
-#def getLimbCount(x):#
-#	N = int('80955794bdb73369df4b8c1dbb3ffb5965b3494a787e369b4a80606d6ece157b3333950204abf9003ed9f601837b7d29d8e0a5e3f6ace7339ee1864bdae9c3ef92fe137c5ebc94768e6f3c82a6496131c1a64cfebff05aefd55c0749e4315de0599d9b3d2bdb530739035d01cb772fd05153be495252c98e1572ac725ab2531b', 16)
-
-#	b = len(str(bin(x)).lstrip("0b"))
-#	print(math.ceil(math.log(N, 2**64)))
-#	return ceildiv(b,64)
 
 
 
-def intToLimbs(x):
-	mask = 18446744073709551615
-	limbCount = getLN(x)
-	limbs = []
-	for i in range (0, int(limbCount)):
-		limbs.append(x & mask)
-		x = x >> 64
-	return limbs
 
 
 
-def getLimbI(x, i):
-	mask = 18446744073709551615
-	x = x >> 64*i
-	r = x&mask
-	return r
-
-
-def montExpOld(N, x, y):
-	pSquared = calcPSquared(N)
-	p = calcP(N, 64)
-	omega = newCalcOmega(N, p)
+def montExpOld(N, x, y, pSquared, p, omega):
 	t = newMontMul(N, 1, pSquared, p, omega)
 	xHat = newMontMul(N, x, pSquared, p, omega)
 #	print t
@@ -61,8 +37,8 @@ def montExpOld(N, x, y):
 
 
 
-def getLN(x):
-	return math.ceil(math.log(x, 2**64))
+def getLN(x, base):
+	return math.ceil(math.log(x, 2**base))
 
 
 
@@ -78,9 +54,9 @@ def interact( G ) :
 
 
 
-def calcPSquared(N):
+def calcPSquared(N, base):
 	t = 1
-	r = 2*getLN(N)*64
+	r = 2*getLN(N, base)*base
 	for i in range(0, int(r)):
 		t = (t +t)%N
 	return t
@@ -98,11 +74,10 @@ def newCalcOmega(N, p):
 	return (( -(number.inverse(N, p))) % p)
 
 
-def calcOmega(N):
+def calcOmega(N, base):
 	t = 1
-	w = 64
-	b = pow(2,64)
-	for i in range(0, w-1):
+	b = pow(2,base)
+	for i in range(0, base-1):
 		t = (t*t*N)%b
 	t = (-t)%b
 	return t
@@ -152,21 +127,22 @@ def attack(A, numberOfSamples) :
 	with open(A) as thefile:
 	    lines = thefile.readlines()  
 
+	base = int(platform.architecture()[0][:-3])
 	n = lines[0]
 	e = lines[1]
 
 
 	nP = int(n, 16)
 	eP = int(e, 16)
-	lN = getLN(nP)
-	b = 2**64
+	lN = getLN(nP, base)
+	b = 2**base
 
 
-	pSquared = calcPSquared(nP)
-	p = calcP(nP, 64)
+	pSquared = calcPSquared(nP, base)
+	p = calcP(nP, base)
 	newOmega = newCalcOmega(nP, p)
 	
-	omega = calcOmega(nP)
+	omega = calcOmega(nP, base)
 	t = newMontMul(nP, 1, pSquared, p, newOmega)
 
 
@@ -177,10 +153,11 @@ def attack(A, numberOfSamples) :
 	tList = []
 	xList = []
 	for i in range (0, numberOfSamples):
-		c = '%128X' % random.randrange(16**128)
-		w ,r = interact(c)
+		c = random.randrange(16**128)		
+		cHex = '%128x' % c
+		w ,r = interact(cHex)
 		ctimeList.append([c, w])
-		xHat = newMontMul(nP, int(c, 16), pSquared, p, newOmega)
+		xHat = newMontMul(nP, c, pSquared, p, newOmega)
 		tTemp = newMontMul(nP, t,t, p, newOmega)
 		tTemp = newMontMul(nP, tTemp, xHat, p, newOmega)
 		xList.append(xHat)
@@ -204,8 +181,8 @@ def attack(A, numberOfSamples) :
 		tList1 = []
 		tList0 = []	
 		for i in range (0, numberOfSamples):
-			c = int(ctimeList[i][0], 16)
-			time = int(ctimeList[i][1], 16) 
+			c = ctimeList[i][0]
+			time = int(ctimeList[i][1])
 			xHat = xList[i]
 			t = tList[i]
 			Ktemp = K
@@ -234,16 +211,16 @@ def attack(A, numberOfSamples) :
 
 		number = 2314234
 		kMaybe1 = int(K[:-1]+'1', 2)
-		if montExpOld(nP, montExpOld(nP, number, eP), kMaybe1) == number:
+		if montExpOld(nP, montExpOld(nP, number, eP, pSquared, p, newOmega), kMaybe1, pSquared, p, newOmega) == number:
 			print 'the key is %s' %K[:-1]+'1'
 			found = True
 			exit()
 		kMaybe0 = int(K[:-1]+'0', 2)
-		if montExpOld(nP, montExpOld(nP, number, eP), kMaybe0) == number:
+		if montExpOld(nP, montExpOld(nP, number, eP, pSquared, p, newOmega), kMaybe0, pSquared, p, newOmega) == number:
 			print 'the key is %s' %K[:-1]+'0'
 			found = True
 			exit()	
-		if greater< 4:
+		if greater< 3:
 			print 'failed with %d numberOfSamples, trying again with %s' %(numberOfSamples, numberOfSamples + 1000)
 			attack(A, numberOfSamples+1000)
 		
@@ -257,6 +234,7 @@ if ( __name__ == "__main__" ) :
                              stdin  = subprocess.PIPE )
 
   # Construct handles to attack target standard input and output.
+
   target_out = target.stdout
   target_in  = target.stdin
   numberOfSamples = 6000
