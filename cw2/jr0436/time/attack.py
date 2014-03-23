@@ -123,13 +123,6 @@ def montMulRedCheck(N, x, y, omega):
 
 
 def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0):
-
-	#print binY
-	#for i in range(0, sizeOfY):
-		#if (i == sizeOfY-1):
-			#print 'old binY %s' %binY	
-			#binY = binY[:-1] + '1'
-			#print 'new 1 binY %s' %binY	
 	tTemp = montMul(N, t,t, omega)
 	t1 = montMul(N, tTemp, xHat, omega)
 	tList1.append(t1)
@@ -137,12 +130,6 @@ def montExp(N, x, binY, sizeOfY, pSquared, omega, t, xHat, tList1, tList0):
 
 	tList0.append(tTemp)
 	t0, red0 = montMulRedCheck(N, tTemp,tTemp, omega)
-
-
-	
-			
-
-	#t = montMul(N, t, 1, omega)
 	return t, red1, red0, tList1, tList0
 
 
@@ -155,33 +142,27 @@ def getAverage(l):
 		av += l[i]
 	return av/len(l)
 
-def attack(A, C) :
+def attack(A, numberOfSamples) :
 	with open(A) as thefile:
 	    lines = thefile.readlines()  
 
 	n = lines[0]
 	e = lines[1]
-	with open(C) as thefile:
-		linesC = thefile.readlines()
 
 
 	nP = int(n, 16)
 	eP = int(e, 16)
 
-	
-	exit()
+
 	pSquared = calcPSquared(nP)
 	omega = calcOmega(nP)
 	t = montMul(nP, 1, pSquared, omega)
 
-
 	ctimeList = [] 
 	tList = []
 	xList = []
-	for i in range (0, 10000):
-		#c = linesC[i]
+	for i in range (0, numberOfSamples):
 		c = '%128x' % random.randrange(16**128)
-		#print c
 		w ,r = interact(c)
 		ctimeList.append([c, w])
 		xHat = montMul(nP, int(c, 16), pSquared, omega)
@@ -195,10 +176,10 @@ def attack(A, C) :
 
 
 
-
+	found = False
 	K = '1'
 	kSize = 1
-	for i in range(0, 64):
+	while found == False:
 		#print ('NEW NUMBER\n')
 		kSize += 1
 		b1 = []
@@ -207,7 +188,7 @@ def attack(A, C) :
 		b4 = []
 		tList1 = []
 		tList0 = []	
-		for i in range (0, 10000):
+		for i in range (0, numberOfSamples):
 			c = int(ctimeList[i][0], 16)
 			time = int(ctimeList[i][1], 16) 
 			xHat = xList[i]
@@ -226,17 +207,31 @@ def attack(A, C) :
 		chance0 = getAverage(b3) - getAverage(b4)
 		if(chance0 > chance1):
 			K = K + '0'
-			#print 'Difference was %d' %chance0
+			print 'Difference was %d' %chance0
 			tList = tList0
+			greater = chance0
 		else:
 			K = K + '1'
-			#print 'Difference was %d'%chance1
+			print 'Difference was %d'%chance1
 			tList = tList1
+			greater = chance1
 		print 'K = %s' %K
 
-	kMaybe = int(K, 2)
-	a =  montExpOld(nP, montExpOld(nP, 2314234, eP), kMaybe)
-	print 'a = %d' %a
+		number = 2314234
+		kMaybe1 = int(K[:-1]+'1', 2)
+		if montExpOld(nP, montExpOld(nP, number, eP), kMaybe1) == number:
+			print 'the key is %s' %K[:-1]+'1'
+			found = True
+			exit()
+		kMaybe0 = int(K[:-1]+'0', 2)
+		if montExpOld(nP, montExpOld(nP, number, eP), kMaybe0) == number:
+			print 'the key is %s' %K[:-1]+'0'
+			found = True
+			exit()	
+		if greater< 4:
+			print 'failed with %d numberOfSamples, trying again with %s' %(numberOfSamples, numberOfSamples + 1000)
+			attack(A, numberOfSamples+1000)
+		
 
 
 
@@ -249,8 +244,8 @@ if ( __name__ == "__main__" ) :
   # Construct handles to attack target standard input and output.
   target_out = target.stdout
   target_in  = target.stdin
-
-  attack(sys.argv[2], sys.argv[3])
+  numberOfSamples = 6000
+  attack(sys.argv[2], numberOfSamples)
   #result = montExp(N, x, y)
   #print('result = %d' %result)
 
