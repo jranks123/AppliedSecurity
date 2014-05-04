@@ -1,0 +1,314 @@
+
+#	for k1 in range (0, 256):
+#		find the delta
+#		add the delta to s set
+#		at hash[delta] add k1 = [0,3] #
+#
+#	for k2 in range (0,256)#
+#		at hash add k2 = [4.6.756.]
+#
+#	s1&s2&s3&s4
+#
+#	list of deltas#
+#
+#	hashtable[65] =  
+
+	#	a = hex(int(x[1], 16)^k)[2:].zfill(2)
+    #	b = hex(int(xPrime[1], 16)^k)[2:].zfill(2)
+	#	c = rsbox[int(a[0:1], 16)*16 + int(a[1:2], 16)]
+	#	d = rsbox[int(b[0:1], 16)*16 + int(b[1:2], 16)]
+		#print rsbox
+		#print c
+		#print d
+	#	print  int(xor_strings('{0:08b}'.format(c), '{0:08b}'.format(d)).encode("hex"),2)
+#		print c ^ d
+
+import sys, subprocess, math, os, random, platform
+from collections import defaultdict
+
+
+rsbox = [0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3,
+            0x9e, 0x81, 0xf3, 0xd7, 0xfb , 0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f,
+            0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb , 0x54,
+            0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b,
+            0x42, 0xfa, 0xc3, 0x4e , 0x08, 0x2e, 0xa1, 0x66, 0x28, 0xd9, 0x24,
+            0xb2, 0x76, 0x5b, 0xa2, 0x49, 0x6d, 0x8b, 0xd1, 0x25 , 0x72, 0xf8,
+            0xf6, 0x64, 0x86, 0x68, 0x98, 0x16, 0xd4, 0xa4, 0x5c, 0xcc, 0x5d,
+            0x65, 0xb6, 0x92 , 0x6c, 0x70, 0x48, 0x50, 0xfd, 0xed, 0xb9, 0xda,
+            0x5e, 0x15, 0x46, 0x57, 0xa7, 0x8d, 0x9d, 0x84 , 0x90, 0xd8, 0xab,
+            0x00, 0x8c, 0xbc, 0xd3, 0x0a, 0xf7, 0xe4, 0x58, 0x05, 0xb8, 0xb3,
+            0x45, 0x06 , 0xd0, 0x2c, 0x1e, 0x8f, 0xca, 0x3f, 0x0f, 0x02, 0xc1,
+            0xaf, 0xbd, 0x03, 0x01, 0x13, 0x8a, 0x6b , 0x3a, 0x91, 0x11, 0x41,
+            0x4f, 0x67, 0xdc, 0xea, 0x97, 0xf2, 0xcf, 0xce, 0xf0, 0xb4, 0xe6,
+            0x73 , 0x96, 0xac, 0x74, 0x22, 0xe7, 0xad, 0x35, 0x85, 0xe2, 0xf9,
+            0x37, 0xe8, 0x1c, 0x75, 0xdf, 0x6e , 0x47, 0xf1, 0x1a, 0x71, 0x1d,
+            0x29, 0xc5, 0x89, 0x6f, 0xb7, 0x62, 0x0e, 0xaa, 0x18, 0xbe, 0x1b ,
+            0xfc, 0x56, 0x3e, 0x4b, 0xc6, 0xd2, 0x79, 0x20, 0x9a, 0xdb, 0xc0,
+            0xfe, 0x78, 0xcd, 0x5a, 0xf4 , 0x1f, 0xdd, 0xa8, 0x33, 0x88, 0x07,
+            0xc7, 0x31, 0xb1, 0x12, 0x10, 0x59, 0x27, 0x80, 0xec, 0x5f , 0x60,
+            0x51, 0x7f, 0xa9, 0x19, 0xb5, 0x4a, 0x0d, 0x2d, 0xe5, 0x7a, 0x9f,
+            0x93, 0xc9, 0x9c, 0xef , 0xa0, 0xe0, 0x3b, 0x4d, 0xae, 0x2a, 0xf5,
+            0xb0, 0xc8, 0xeb, 0xbb, 0x3c, 0x83, 0x53, 0x99, 0x61 , 0x17, 0x2b,
+            0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55,
+            0x21, 0x0c, 0x7d]
+
+
+
+
+def gf_mul(a, b):
+    p = 0
+    for counter in range(8):
+        if b & 1: 
+        	p ^= a
+        hi_bit_set = a & 0x80
+        a <<= 1
+        a &= 0xFF
+        if hi_bit_set:
+            a ^= 0x1b
+        b >>= 1
+    return p
+
+def gf_inv(a) :
+  t_0 = gf_mul(a, a)      # a^2
+  t_1 = gf_mul(t_0, a)    # a^3
+  t_0 = gf_mul(t_0, t_0)  # a^4
+  t_1 = gf_mul(t_1, t_0)  # a^7
+  t_0 = gf_mul(t_0, t_0)  # a^8
+  t_0 = gf_mul(t_1, t_0)  # a^15
+  t_0 = gf_mul(t_0, t_0)  # a^30
+  t_0 = gf_mul(t_0, t_0)  # a^60
+  t_1 = gf_mul(t_1, t_0)  # a^67
+  t_0 = gf_mul(t_0, t_1)  # a^127
+  t_0 = gf_mul(t_0, t_0)  # a^254
+
+  return t_0
+  
+  
+  
+def convert(int_value):
+   encoded = format(int_value, 'x')
+
+   length = len(encoded)
+   encoded = encoded.zfill(2)
+   return encoded
+
+
+
+
+def interact( parameters, m ) :
+	# Send      G      to   attack target.
+	target_in.write( "%s\n%s\n" % ( parameters, m) ) ; target_in.flush()
+
+	# Receive ( t) from attack target.
+	t = ( target_out.readline().strip() )
+	return t
+
+
+
+def generateHex() :
+	c = random.randrange(16**32)		
+	cHex = '%32x' % c
+	return cHex
+
+def generateHex2() :
+	cArray = []
+	for i in range (0, 16):
+		cHex = os.urandom(1).encode('hex')
+		cArray.append(cHex)
+	return cArray
+
+def xor_strings(xs, ys):
+    return "".join(chr(ord(x) ^ ord(y)) for x, y in zip(xs, ys))
+
+
+def generateHypotheses(delta, hypotheses, d) :
+	for i in d[delta]['k1'] :
+		for j in d[delta]['k2'] :
+			for k in d[delta]['k3'] :
+				for l in d[delta]['k4'] :
+					hypotheses.append([i,j,k,l])
+	return hypotheses
+
+def calcQuad(x, xPrime, k1, gf1, k2, gf2, k3, gf3,  k4, gf4) :
+	k1 = k1-1
+	k2 = k2-1
+	k3 = k3-1
+	k4 = k4-1
+	s1 = set()  #store deltas
+	s2 = set()
+	s3 = set()
+	s4 = set()
+
+	d1 = {}
+
+
+
+
+
+
+
+
+	#k = 55
+	#x[1] = 'AB'
+	#xPrime[1] = 'AB'
+	#print hex(int(x[1], 16)^55)[2:]
+	#print convert(k).decode('hex')
+	#print xor_strings(convert(k).decode("hex"), 'AB'.decode("hex")).encode("hex")
+	#print x[1]
+	#print xPrime[1]
+
+
+
+#d1 = {
+#	65: {'k1':[65,34], 'k2':[65,34], 'k3':[65,34]},
+#	76:{'k1':[63,34], 'k2':[65,34], 'k3':[65,34]} }
+
+
+
+#d1[65]['k1'].append(10)?
+#print(d1[65]['k1'])
+
+	for k in range (0, 256):
+		delta = gf_mul(rsbox[int(hex(int(x[k1], 16)^k)[2:].zfill(2)[0:1], 16)*16 + int(hex(int(x[k1], 16)^k)[2:].zfill(2)[1:2], 16)] ^ rsbox[int(hex(int(xPrime[k1], 16)^k)[2:].zfill(2)[0:1], 16)*16 + int(hex(int(xPrime[k1], 16)^k)[2:].zfill(2)[1:2], 16)],gf_inv(gf1))
+		s1.add(delta)
+		if delta not in d1.keys():
+			d1[delta] = {'k1' : [], 'k2' : [], 'k3' : [], 'k4' : []}
+		d1[delta]['k1'].append(k)
+
+
+	for k in range (0, 256):
+		delta = gf_mul(rsbox[int(hex(int(x[k2], 16)^k)[2:].zfill(2)[0:1], 16)*16 + int(hex(int(x[k2], 16)^k)[2:].zfill(2)[1:2], 16)] ^ rsbox[int(hex(int(xPrime[k2], 16)^k)[2:].zfill(2)[0:1], 16)*16 + int(hex(int(xPrime[k2], 16)^k)[2:].zfill(2)[1:2], 16)],gf_inv(gf2))
+		s2.add(delta)
+		if delta not in d1.keys():
+			d1[delta] = {'k1' : [], 'k2' : [], 'k3' : [], 'k4' : []}
+		d1[delta]['k2'].append(k)
+
+	for k in range (0, 256):
+		delta = gf_mul(rsbox[int(hex(int(x[k3], 16)^k)[2:].zfill(2)[0:1], 16)*16 + int(hex(int(x[k3], 16)^k)[2:].zfill(2)[1:2], 16)] ^ rsbox[int(hex(int(xPrime[k3], 16)^k)[2:].zfill(2)[0:1], 16)*16 + int(hex(int(xPrime[k3], 16)^k)[2:].zfill(2)[1:2], 16)],gf_inv(gf3))
+		s3.add(delta)
+		if delta not in d1.keys():
+			d1[delta] = {'k1' : [], 'k2' : [], 'k3' : [], 'k4' : []}
+		d1[delta]['k3'].append(k)
+
+	for k in range (0, 256):
+		delta = gf_mul(rsbox[int(hex(int(x[k4], 16)^k)[2:].zfill(2)[0:1], 16)*16 + int(hex(int(x[k4], 16)^k)[2:].zfill(2)[1:2], 16)] ^ rsbox[int(hex(int(xPrime[k4], 16)^k)[2:].zfill(2)[0:1], 16)*16 + int(hex(int(xPrime[k4], 16)^k)[2:].zfill(2)[1:2], 16)],gf_inv(gf4))
+		s4.add(delta)
+		if delta not in d1.keys():
+			d1[delta] = {'k1' : [], 'k2' : [], 'k3' : [], 'k4' : []}
+		d1[delta]['k4'].append(k)
+
+
+	hypotheses = []
+	validDeltas = s1&s2&s3&s4
+	for i in validDeltas:
+		hypotheses = generateHypotheses(i, hypotheses, d1)
+
+	return hypotheses
+
+
+def findMatch(a, b):
+	for i in a:
+		for j in b:
+			if i == j:
+				return i
+	return 0
+
+		
+
+	#print s1
+	#print d1[25]
+	
+	
+def cheat(xArray, xPrimeArray, xPrimeArray2):
+	firstFault1 = calcQuad(xArray, xPrimeArray, 1, 2, 14,1, 11, 1, 8, 3)
+	secondFault1 = calcQuad(xArray, xPrimeArray2, 1, 2, 14,1, 11, 1, 8, 3)
+
+	firstFault2 = calcQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)
+	secondFault2 = calcQuad(xArray, xPrimeArray2, 5, 1, 2, 1, 15, 3, 12, 2)
+
+	firstFault3 = calcQuad(xArray, xPrimeArray, 9, 1, 6,3, 3, 2, 16, 1)
+	secondFault3 = calcQuad(xArray, xPrimeArray2, 9, 1, 6,3, 3, 2, 16, 1)
+
+	firstFault4 = calcQuad(xArray, xPrimeArray, 13, 3, 10,2, 7, 1, 4, 1)
+	secondFault4 = calcQuad(xArray, xPrimeArray2, 13, 3, 10,2, 7, 1, 4, 1)
+
+
+	quad1 = findMatch(firstFault1,secondFault1)
+	quad2 = findMatch(firstFault2,secondFault2)
+	quad3 = findMatch(firstFault3,secondFault3)
+	quad4 = findMatch(firstFault4,secondFault4)
+
+	k1 = quad1[0]
+	k14 = quad1[1]
+	k11 = quad1[2]
+	k8 = quad1[3]
+
+	k5 = quad2[0]
+	k2 = quad2[1]
+	k15 = quad2[2]
+	k12 = quad2[3]
+
+	k9 = quad3[0]
+	k6 = quad3[1]
+	k3 = quad3[2]
+	k16 = quad3[3]
+
+	k13 = quad4[0]
+	k10 = quad4[1]
+	k7 = quad4[2]
+	k4 = quad4[3]
+	
+	result = k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16
+	r = ""
+	for i in result:
+	 	r = r + str(hex(i).lstrip("0x").zfill(2))
+	return r
+	
+	
+def attack() :
+	r = '8'
+	f = '1'
+	p = '0'
+	i = '0'
+	j = '0'
+	tuple = r+','+f+','+p+','+i+','+j
+	m = generateHex()
+	x = interact("", m)
+	xPrime = interact(tuple, m)
+	xPrime2 = interact(tuple, m)
+	xArray = []
+	xPrimeArray = []
+	xPrimeArray2 = []
+	for i in range(0, 16):
+		xArray.append(x[2*i:2*i+2])
+	for i in range(0, 16):
+		xPrimeArray.append(xPrime[2*i:2*i+2])
+	for i in range(0, 16):
+		xPrimeArray2.append(xPrime2[2*i:2*i+2])
+
+	cheat(xArray, xPrimeArray, xPrimeArray2)
+	firstFault1 = calcQuad(xArray, xPrimeArray, 1, 2, 14,1, 11, 1, 8, 3)
+	firstFault2 = calcQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)
+	firstFault3 = calcQuad(xArray, xPrimeArray, 9, 1, 6,3, 3, 2, 16, 1)
+	firstFault4 = calcQuad(xArray, xPrimeArray, 13, 3, 10,2, 7, 1, 4, 1)
+
+
+
+
+
+
+
+
+
+if ( __name__ == "__main__" ) :
+  # Produce a sub-process representing the attack target.
+  target = subprocess.Popen( args   = sys.argv[ 1 ],
+                             stdout = subprocess.PIPE, 
+                             stdin  = subprocess.PIPE )
+
+  # Construct handles to attack target standard input and output.
+
+
+  target_out = target.stdout
+  target_in  = target.stdin
+  attack()
