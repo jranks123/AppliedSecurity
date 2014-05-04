@@ -347,7 +347,7 @@ def cheat(xArray, xPrimeArray, xPrimeArray2):
 	k4 = quad4[3]
 	
 	result = k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16
-	result = keyReverse(result)
+
 	r = ""
 	for i in result:
 	 	r = r + str(hex(i).lstrip("0x").zfill(2))
@@ -438,9 +438,7 @@ def attack() :
 			for k in range (0, len(firstFault3)):
 				for l in range (0, len(firstFault4)):
 					K = firstFault1[i]+firstFault2[j]+firstFault3[k]+firstFault4[l]
-					K = [243, 121, 100, 58, 5, 111, 185, 102, 60, 93, 170, 46, 136, 31, 153, 157]
-					K = actualK
-					print actualK
+
 					#Equation 1
 					k1 = K[0]
 					k2 = K[1]
@@ -499,12 +497,12 @@ def attack() :
 							^ gf_mul((rsbox[x2P ^ k2] ^ (k6 ^ k2)),13) \
 							^gf_mul((rsbox[x15P ^ k15] ^ (k7 ^ k3)),9) \
 							^gf_mul((rsbox[x12P ^ k12] ^ (k8 ^ k4)), 14)], gf_inv(3)) == f :
-								print "he"
-								#if aes(k, m2) == xNum:
-								#	print("success")
-								#	exit()
-								#else:
-								#	print ("fail")
+								
+								if aes(	keyReverse(K), m2) == numX:
+									print("success")
+									exit()
+								else:
+									print ("fail")
 
 		
 					#print aes(K, m2)
