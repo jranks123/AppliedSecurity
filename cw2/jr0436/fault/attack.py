@@ -1,27 +1,98 @@
+def calcOldQuad(x, xPrime, k1, gf1, k2, gf2, k3, gf3,  k4, gf4) :
+	k1 = k1-1
+	k2 = k2-1
+	k3 = k3-1
+	k4 = k4-1
+	s1 = set()  #store deltas
+	s2 = set()
+	s3 = set()
+	s4 = set()
 
-#	for k1 in range (0, 256):
-#		find the delta
-#		add the delta to s set
-#		at hash[delta] add k1 = [0,3] #
-#
-#	for k2 in range (0,256)#
-#		at hash add k2 = [4.6.756.]
-#
-#	s1&s2&s3&s4
-#
-#	list of deltas#
-#
-#	hashtable[65] =  
+	d1 = {}
 
-	#	a = hex(int(x[1], 16)^k)[2:].zfill(2)
-    #	b = hex(int(xPrime[1], 16)^k)[2:].zfill(2)
-	#	c = rsbox[int(a[0:1], 16)*16 + int(a[1:2], 16)]
-	#	d = rsbox[int(b[0:1], 16)*16 + int(b[1:2], 16)]
-		#print rsbox
-		#print c
-		#print d
-	#	print  int(xor_strings('{0:08b}'.format(c), '{0:08b}'.format(d)).encode("hex"),2)
-#		print c ^ d
+	for k in range (0, 256):
+		delta = gf_mul(rsbox[int(x[k1],16) ^ k] ^ rsbox[int(xPrime[k1], 16) ^ k],gf_inv(gf1))
+		s1.add(delta)
+		if delta not in d1.keys():
+			d1[delta] = {'k1' : [], 'k2' : [], 'k3' : [], 'k4' : []}
+		d1[delta]['k1'].append(k)
+
+
+	for k in range (0, 256):
+		delta = gf_mul(rsbox[int(x[k2],16) ^ k] ^ rsbox[int(xPrime[k2], 16) ^ k],gf_inv(gf2))
+		s2.add(delta)
+		if delta not in d1.keys():
+			d1[delta] = {'k1' : [], 'k2' : [], 'k3' : [], 'k4' : []}
+		d1[delta]['k2'].append(k)
+
+	for k in range (0, 256):
+		delta = gf_mul(rsbox[int(x[k3],16) ^ k] ^ rsbox[int(xPrime[k3], 16) ^ k],gf_inv(gf3))
+		s3.add(delta)
+		if delta not in d1.keys():
+			d1[delta] = {'k1' : [], 'k2' : [], 'k3' : [], 'k4' : []}
+		d1[delta]['k3'].append(k)
+
+	for k in range (0, 256):
+		delta = gf_mul(rsbox[int(x[k4],16) ^ k] ^ rsbox[int(xPrime[k4], 16) ^ k],gf_inv(gf4))
+		s4.add(delta)
+		if delta not in d1.keys():
+			d1[delta] = {'k1' : [], 'k2' : [], 'k3' : [], 'k4' : []}
+		d1[delta]['k4'].append(k)
+
+
+	hypotheses = []
+	validDeltas = s1&s2&s3&s4
+	for i in validDeltas:
+		hypotheses = generateHypotheses(i, hypotheses, d1)
+
+	return hypotheses
+
+
+def cheat(xArray, xPrimeArray, xPrimeArray2):
+	firstFault1 = calcOldQuad(xArray, xPrimeArray, 1, 2, 14,1, 11, 1, 8, 3)
+	secondFault1 = calcOldQuad(xArray, xPrimeArray2, 1, 2, 14,1, 11, 1, 8, 3)
+
+	firstFault2 = calcOldQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)
+	secondFault2 = calcOldQuad(xArray, xPrimeArray2, 5, 1, 2, 1, 15, 3, 12, 2)
+
+	firstFault3 = calcOldQuad(xArray, xPrimeArray, 9, 1, 6,3, 3, 2, 16, 1)
+	secondFault3 = calcOldQuad(xArray, xPrimeArray2, 9, 1, 6,3, 3, 2, 16, 1)
+
+	firstFault4 = calcOldQuad(xArray, xPrimeArray, 13, 3, 10,2, 7, 1, 4, 1)
+	secondFault4 = calcOldQuad(xArray, xPrimeArray2, 13, 3, 10,2, 7, 1, 4, 1)
+
+	
+	quad1 = findMatch(firstFault1,secondFault1)
+	quad2 = findMatch(firstFault2,secondFault2)
+	quad3 = findMatch(firstFault3,secondFault3)
+	quad4 = findMatch(firstFault4,secondFault4)
+
+	k1 = quad1[0]
+	k14 = quad1[1]
+	k11 = quad1[2]
+	k8 = quad1[3]
+
+	k5 = quad2[0]
+	k2 = quad2[1]
+	k15 = quad2[2]
+	k12 = quad2[3]
+
+	k9 = quad3[0]
+	k6 = quad3[1]
+	k3 = quad3[2]
+	k16 = quad3[3]
+
+	k13 = quad4[0]
+	k10 = quad4[1]
+	k7 = quad4[2]
+	k4 = quad4[3]
+	
+	result = k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16
+	r = ""
+	for i in result:
+	 	r = r + str(hex(i).lstrip("0x").zfill(2))
+	print "actual K = " + r
+	return result
 
 import sys, subprocess, math, os, random, platform
 import struct, Crypto.Cipher.AES as AES
@@ -183,7 +254,7 @@ def generateHypotheses(delta, hypotheses, d) :
 
 	return hypotheses
 
-def generateK0hyp (delta, hypotheses, d, k0Potentials, k1Potentials) :
+def generateK0hyp (delta, hypotheses, d, k0Potentials) :
 
 	for i in d[delta]['k1'] :
 		for j in d[delta]['k2'] :
@@ -191,42 +262,45 @@ def generateK0hyp (delta, hypotheses, d, k0Potentials, k1Potentials) :
 				for l in d[delta]['k4'] :
 					dupeHypo = False
 					for n in range (0, len(hypotheses)):
-						if hypotheses[n] == [k,l]:
+						if hypotheses[n] == [j, k,l]:
 							dupeHypo = True
 					if not dupeHypo:
-						hypotheses.append([k,l])
-					temp = str(k).zfill(3)+str(l).zfill(3)
+						hypotheses.append([j,k,l])
+					temp = str(j).zfill(3)+str(k).zfill(3)+str(l).zfill(3)
 					if temp not in k0Potentials.keys():
 						k0Potentials[temp] = []
-					if temp not in k1Potentials.keys():
-						k1Potentials[temp] = []
 					dupe0 = False
 					for p in k0Potentials[temp]:
 						if i == p:
 							dupe0 = True
 					if not dupe0:
 						k0Potentials[temp].append(i)
-					dupe1 = False
-					for w in k1Potentials[temp]:
-						if j == w:
-							dupe1 = True
-					if not dupe1:
-						k1Potentials[temp].append(j)
 					
-	return (hypotheses, k0Potentials, k1Potentials)
+	return (hypotheses, k0Potentials)
 
 
-def generateK1hyp (delta, hypotheses, d) :
-	k1Potentials = {}
+def generateK1hyp (delta, hypotheses, d, k1Potentials) :
+
 	for i in d[delta]['k1'] :
 		for j in d[delta]['k2'] :
 			for k in d[delta]['k3'] :
 				for l in d[delta]['k4'] :
-					hypotheses.append([i,k,l])
-					temp = str(i)+str(k)+str(l)
+					dupeHypo = False
+					for n in range (0, len(hypotheses)):
+						if hypotheses[n] == [i, k,l]:
+							dupeHypo = True
+					if not dupeHypo:
+						hypotheses.append([i,k,l])
+					temp = str(i).zfill(3)+str(k).zfill(3)+str(l).zfill(3)
 					if temp not in k1Potentials.keys():
 						k1Potentials[temp] = []
-					k1Potentials[temp].append(j)
+					dupe0 = False
+					for p in k1Potentials[temp]:
+						if i == p:
+							dupe0 = True
+					if not dupe0:
+						k1Potentials[temp].append(j)
+					
 	return (hypotheses, k1Potentials)
 
 def calcQuad(x, xPrime, k1, gf1, k2, gf2, k3, gf3,  k4, gf4) :
@@ -275,7 +349,7 @@ def calcQuad(x, xPrime, k1, gf1, k2, gf2, k3, gf3,  k4, gf4) :
 
 	hypotheses = []
 	validDeltas = s1&s2&s3&s4
-	if (k1 != 0 ):
+	if (k1 != 0 and k2 != 1):
 		for i in validDeltas:
 			hypotheses = generateHypotheses(i, hypotheses, d1)
 
@@ -283,18 +357,16 @@ def calcQuad(x, xPrime, k1, gf1, k2, gf2, k3, gf3,  k4, gf4) :
 
 	elif k1 == 0:
 		k0Potentials = {}
+		for i in validDeltas:
+			(hypotheses, k0Potentials) = generateK0hyp(i, hypotheses, d1, k0Potentials)
+		return (hypotheses, k0Potentials)
+
+
+	elif k2 == 1:
 		k1Potentials = {}
 		for i in validDeltas:
-			(hypotheses, k0Potentials, k1Potentials) = generateK0hyp(i, hypotheses, d1, k0Potentials, k1Potentials)
-		return (hypotheses, k0Potentials, k1Potentials)
-
-
-	#elif k2 == 1:
-
-	#	k1Potentials = {}
-	#	for i in validDeltas:
-	#		(hypotheses, k1Potentials) = generateK1hyp(i, hypotheses, d1)
-	#	return (hypotheses, k1Potentials)
+			(hypotheses, k1Potentials) = generateK1hyp(i, hypotheses, d1, k1Potentials)
+		return (hypotheses, k1Potentials)
 
 
 
@@ -347,57 +419,10 @@ def keyReverse(k) :
     k_temp = keyReverseStep(k_temp, i)
   return k_temp
 	
-	
-def cheat(xArray, xPrimeArray, xPrimeArray2):
-	firstFault1 = calcQuad(xArray, xPrimeArray, 1, 2, 14,1, 11, 1, 8, 3)
-	secondFault1 = calcQuad(xArray, xPrimeArray2, 1, 2, 14,1, 11, 1, 8, 3)
-
-	firstFault2 = calcQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)
-	secondFault2 = calcQuad(xArray, xPrimeArray2, 5, 1, 2, 1, 15, 3, 12, 2)
-
-	firstFault3 = calcQuad(xArray, xPrimeArray, 9, 1, 6,3, 3, 2, 16, 1)
-	secondFault3 = calcQuad(xArray, xPrimeArray2, 9, 1, 6,3, 3, 2, 16, 1)
-
-	firstFault4 = calcQuad(xArray, xPrimeArray, 13, 3, 10,2, 7, 1, 4, 1)
-	secondFault4 = calcQuad(xArray, xPrimeArray2, 13, 3, 10,2, 7, 1, 4, 1)
-
-	
-	quad1 = findMatch(firstFault1,secondFault1)
-	quad2 = findMatch(firstFault2,secondFault2)
-	quad3 = findMatch(firstFault3,secondFault3)
-	quad4 = findMatch(firstFault4,secondFault4)
-
-	k1 = quad1[0]
-	k14 = quad1[1]
-	k11 = quad1[2]
-	k8 = quad1[3]
-
-	k5 = quad2[0]
-	k2 = quad2[1]
-	k15 = quad2[2]
-	k12 = quad2[3]
-
-	k9 = quad3[0]
-	k6 = quad3[1]
-	k3 = quad3[2]
-	k16 = quad3[3]
-
-	k13 = quad4[0]
-	k10 = quad4[1]
-	k7 = quad4[2]
-	k4 = quad4[3]
-	
-	result = k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16
-
-	r = ""
-	for i in result:
-	 	r = r + str(hex(i).lstrip("0x").zfill(2))
-	print "actual K = " + r
-	return result
-
-	
+		
 	
 def attack() :
+	test = True
 	r = '8'
 	f = '1'
 	p = '0'
@@ -430,9 +455,10 @@ def attack() :
 
 	k0Potentials = {}
 	k1Potentials = {}
-	#actualK = cheat(xArray, xPrimeArray, xPrimeArray2)
-	(firstFault1 , k0Potentials, k1Potentials) = calcQuad(xArray, xPrimeArray, 1, 2, 14,1, 11, 1, 8, 3)
-	firstFault2 = calcQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)
+	if test :
+		actualK = cheat(xArray, xPrimeArray, xPrimeArray2)
+	(firstFault1 , k0Potentials) = calcQuad(xArray, xPrimeArray, 1, 2, 14,1, 11, 1, 8, 3)
+	(firstFault2 , k1Potentials) = calcQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)
 	firstFault3 = calcQuad(xArray, xPrimeArray, 9, 1, 6,3, 3, 2, 16, 1)
 	firstFault4 = calcQuad(xArray, xPrimeArray, 13, 3, 10,2, 7, 1, 4, 1)
 
@@ -476,6 +502,7 @@ def attack() :
 	x14P = xPrimeNum[13]
 	x15P = xPrimeNum[14]
 	x16P = xPrimeNum[15]
+	print k0Potentials
 	print len(firstFault1)
 	for i in range (0, len(firstFault1)):
 		for j in range (0, len(firstFault2)):
@@ -503,6 +530,22 @@ def attack() :
 					h10 = aes_round_constant[9]
 
 
+					if test:
+						k3 = actualK[2]
+						k4 = actualK[3]
+						k5 = actualK[4]
+						k6 = actualK[5]
+						k7 = actualK[6]
+						k8 = actualK[7]
+						k9 = actualK[8]
+						k10 = actualK[9]
+						k11= actualK[10]
+						k12 = actualK[11]
+						k13 = actualK[12]
+						k14= actualK[13]
+						k15 = actualK[14]
+						k16 = actualK[15]
+
 	
 
 
@@ -527,9 +570,12 @@ def attack() :
 					^gf_mul((rsbox[x16P ^ k16] ^ (k12 ^ k8)), 11)]  == f :
 						for n in range (0, len(k0Potentials)):
 							for m in range(0, len(k1Potentials)):
-								kTwoToFour =str(k3).zfill(3) + str(k4).zfill(3)
-								for o in k0Potentials[kTwoToFour]:
-									for p in k1Potentials[kTwoToFour]:
+								k0Key =str(k14).zfill(3) + str(k11).zfill(3)+ str(k8).zfill(3)
+								k1Key =str(k5).zfill(3) + str(k15).zfill(3)+ str(k12).zfill(3)
+								for o in k0Potentials[k0Key]:
+									for p in k1Potentials[k1Key]:
+										print o
+										print p
 										k1 = o
 										k2 = p
 										if gf_mul(rsbox[gf_mul( ( rsbox[x1 ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
@@ -548,12 +594,14 @@ def attack() :
 											^ gf_mul((rsbox[x2P ^ k2] ^ (k6 ^ k2)),13) \
 											^gf_mul((rsbox[x15P ^ k15] ^ (k7 ^ k3)),9) \
 											^gf_mul((rsbox[x12P ^ k12] ^ (k8 ^ k4)), 14)], gf_inv(3)) == f :
+												K = [k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16]
+
 												if aes(	keyReverse(K), m2) == numX:
 													print("success")
 													exit()
 												else:
 													print ("fail")
-
+					
 					#print aes(K, m2)
 	
 	#result = aes(actualK, m2)
@@ -580,3 +628,8 @@ if ( __name__ == "__main__" ) :
   target_out = target.stdout
   target_in  = target.stdin
   attack()
+
+
+
+
+
