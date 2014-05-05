@@ -266,15 +266,14 @@ def generateK0hyp (delta, hypotheses, d, k0Potentials) :
 							dupeHypo = True
 					if not dupeHypo:
 						hypotheses.append([j,k,l])
-					temp = str(j).zfill(3)+str(k).zfill(3)+str(l).zfill(3)
-					if temp not in k0Potentials.keys():
-						k0Potentials[temp] = []
+					if (j,k,l) not in k0Potentials.keys():
+						k0Potentials[(j,k,l)] = []
 					dupe0 = False
-					for p in k0Potentials[temp]:
+					for p in k0Potentials[(j,k,l)]:
 						if i == p:
 							dupe0 = True
 					if not dupe0:
-						k0Potentials[temp].append(i)
+						k0Potentials[(j,k,l)].append(i)
 					
 	return (hypotheses, k0Potentials)
 
@@ -291,15 +290,14 @@ def generateK1hyp (delta, hypotheses, d, k1Potentials) :
 							dupeHypo = True
 					if not dupeHypo:
 						hypotheses.append([i,k,l])
-					temp = str(i).zfill(3)+str(k).zfill(3)+str(l).zfill(3)
-					if temp not in k1Potentials.keys():
-						k1Potentials[temp] = []
+					if (i,k,l) not in k1Potentials.keys():
+						k1Potentials[(i,k,l)] = []
 					dupe0 = False
-					for p in k1Potentials[temp]:
+					for p in k1Potentials[(i,k,l)]:
 						if i == p:
 							dupe0 = True
 					if not dupe0:
-						k1Potentials[temp].append(j)
+						k1Potentials[(i,k,l)].append(j)
 					
 	return (hypotheses, k1Potentials)
 
@@ -457,10 +455,11 @@ def attack() :
 	k1Potentials = {}
 	if test :
 		actualK = cheat(xArray, xPrimeArray, xPrimeArray2)
-	(firstFault1 , k0Potentials) = calcQuad(xArray, xPrimeArray, 1, 2, 14,1, 11, 1, 8, 3)
-	(firstFault2 , k1Potentials) = calcQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)
+	(firstFault1 , k0Potentials) = calcQuad(xArray, xPrimeArray, 1, 2, 14,1, 11, 1, 8, 3)   
+	(firstFault2 , k1Potentials) = calcQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)  
 	firstFault3 = calcQuad(xArray, xPrimeArray, 9, 1, 6,3, 3, 2, 16, 1)
 	firstFault4 = calcQuad(xArray, xPrimeArray, 13, 3, 10,2, 7, 1, 4, 1)
+
 
 	xNum = []
 	xPrimeNum = []
@@ -504,29 +503,33 @@ def attack() :
 	x16P = xPrimeNum[15]
 	print k0Potentials
 	print len(firstFault1)
+	count = 0
+	gf2 = gf_inv(2)
+	gf3 = gf_inv(3)
 	for i in range (0, len(firstFault1)):
 		for j in range (0, len(firstFault2)):
 			for k in range (0, len(firstFault3)):
 				for l in range (0, len(firstFault4)):
 					K = firstFault1[i]+firstFault2[j]+firstFault3[k]+firstFault4[l]
 
+					count = count + 1
 					#Equation 1
 					#k1 = K[0]
 					#k2 = K[1]
-					k3 = K[0]
-					k4 = K[1]
-					k5 = K[2]
-					k6 = K[3]
-					k7 = K[4]
-					k8 = K[5]
+					k3 = K[8]
+					k4 = K[13]
+					k5 = K[3]
+					k6 = K[7]
+					k7 = K[12]
+					k8 = K[2]
 					k9 = K[6]
-					k10 = K[7]
-					k11= K[8]
-					k12 = K[9]
+					k10 = K[11]
+					k11= K[1]
+					k12 = K[5]
 					k13 = K[10]
-					k14= K[11]
-					k15 = K[12]
-					k16 = K[13]
+					k14= K[0]
+					k15 = K[4]
+					k16 = K[9]
 					h10 = aes_round_constant[9]
 
 
@@ -549,8 +552,6 @@ def attack() :
 	
 
 
-
-					
 					f = rsbox[gf_mul((rsbox[x13 ^ k13] ^ (k13 ^ k9)), 9) \
 					^ gf_mul((rsbox[x10 ^ k10] ^ (k10 ^ k14)),14) \
 					^gf_mul((rsbox[x7 ^ k7] ^ (k15 ^ k11)),11) \
@@ -568,49 +569,37 @@ def attack() :
 					^ gf_mul((rsbox[x6P ^ k6] ^ (k10 ^ k6)),9) \
 					^gf_mul((rsbox[x3P ^ k3] ^ (k11 ^ k7)),14) \
 					^gf_mul((rsbox[x16P ^ k16] ^ (k12 ^ k8)), 11)]  == f :
-						for n in range (0, len(k0Potentials)):
-							for m in range(0, len(k1Potentials)):
-								k0Key =str(k14).zfill(3) + str(k11).zfill(3)+ str(k8).zfill(3)
-								k1Key =str(k5).zfill(3) + str(k15).zfill(3)+ str(k12).zfill(3)
-								for o in k0Potentials[k0Key]:
-									for p in k1Potentials[k1Key]:
-										print o
-										print p
-										k1 = o
-										k2 = p
-										if gf_mul(rsbox[gf_mul( ( rsbox[x1 ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
-										^ gf_mul((rsbox[ x14 ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
-										^ gf_mul((rsbox[ x11^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
-										^ gf_mul((rsbox[ x8 ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)] \
-										^ rsbox[gf_mul((rsbox[x1P ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
-										^ gf_mul((rsbox[ x14P ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
-										^ gf_mul((rsbox[ x11P ^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
-										^ gf_mul((rsbox[ x8P ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)], gf_inv(2)) == f:
-											if gf_mul(rsbox[gf_mul((rsbox[x5 ^ k5] ^ (k5 ^ k1)), 11) \
-											^ gf_mul((rsbox[x2 ^ k2] ^ (k6 ^ k2)),13) \
-											^gf_mul((rsbox[x15 ^ k15] ^ (k7 ^ k3)),9) \
-											^gf_mul((rsbox[x12 ^ k12] ^ (k8 ^ k4)), 14)] \
-											^rsbox[gf_mul((rsbox[x5P ^ k5] ^ (k5 ^ k1)), 11) \
-											^ gf_mul((rsbox[x2P ^ k2] ^ (k6 ^ k2)),13) \
-											^gf_mul((rsbox[x15P ^ k15] ^ (k7 ^ k3)),9) \
-											^gf_mul((rsbox[x12P ^ k12] ^ (k8 ^ k4)), 14)], gf_inv(3)) == f :
-												K = [k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16]
-
-												if aes(	keyReverse(K), m2) == numX:
-													print("success")
-													exit()
-												else:
-													print ("fail")
-					
-					#print aes(K, m2)
-	
-	#result = aes(actualK, m2)
-	#print result
-	#r = ""
-	#for i in result:
-	# 	r = r + str(hex(i).lstrip("0x").zfill(2))
-	#print "possib X = " + r
-
+						k0Key =(k14,k11,k8)
+						k1Key =(k5,k15,k12)
+						for o in k0Potentials[k0Key]:
+							for p in k1Potentials[k1Key]:
+								k1 = o
+								k2 = p
+								if gf_mul(rsbox[gf_mul( ( rsbox[x1 ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
+								^ gf_mul((rsbox[ x14 ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
+								^ gf_mul((rsbox[ x11^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
+								^ gf_mul((rsbox[ x8 ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)] \
+								^ rsbox[gf_mul((rsbox[x1P ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
+								^ gf_mul((rsbox[ x14P ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
+								^ gf_mul((rsbox[ x11P ^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
+								^ gf_mul((rsbox[ x8P ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)], gf2) == f:
+									print count
+									if gf_mul(rsbox[gf_mul((rsbox[x5 ^ k5] ^ (k5 ^ k1)), 11) \
+									^ gf_mul((rsbox[x2 ^ k2] ^ (k6 ^ k2)),13) \
+									^gf_mul((rsbox[x15 ^ k15] ^ (k7 ^ k3)),9) \
+									^gf_mul((rsbox[x12 ^ k12] ^ (k8 ^ k4)), 14)] \
+									^rsbox[gf_mul((rsbox[x5P ^ k5] ^ (k5 ^ k1)), 11) \
+									^ gf_mul((rsbox[x2P ^ k2] ^ (k6 ^ k2)),13) \
+									^gf_mul((rsbox[x15P ^ k15] ^ (k7 ^ k3)),9) \
+									^gf_mul((rsbox[x12P ^ k12] ^ (k8 ^ k4)), 14)], gf3) == f :
+										K = [k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16]
+										K = keyReverse(K)
+										if aes(	K, m2) == numX:
+											print("success")
+											print K
+											exit()
+										else:
+											print ("fail")
 
 
 
