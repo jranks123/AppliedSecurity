@@ -96,7 +96,7 @@ def cheat(xArray, xPrimeArray, xPrimeArray2):
 
 import sys, subprocess, math, os, random, platform
 import struct, Crypto.Cipher.AES as AES
-
+from stage2 import stage2
 from collections import defaultdict
 
 def aes(k, m):
@@ -432,16 +432,18 @@ def attack() :
 	m2 = (int(m[0:2], 16),int(m[2:4], 16),int(m[4:6], 16),int(m[6:8], 16),int(m[8:10], 16),int(m[10:12], 16),int(m[12:14], 16)\
 		,int(m[14:16], 16), int(m[16:18], 16),int(m[18:20], 16),int(m[20:22], 16),int(m[22:24], 16),int(m[24:26], 16),int(m[26:28], 16),\
 		int(m[28:30], 16),int(m[30:32], 16) )
+	m3 = [int(m[0:2], 16),int(m[2:4], 16),int(m[4:6], 16),int(m[6:8], 16),int(m[8:10], 16),int(m[10:12], 16),int(m[12:14], 16)\
+		,int(m[14:16], 16), int(m[16:18], 16),int(m[18:20], 16),int(m[20:22], 16),int(m[22:24], 16),int(m[24:26], 16),int(m[26:28], 16),\
+		int(m[28:30], 16),int(m[30:32], 16) ]
 	x = interact("", m)
-	
+
 	numX = (int(x[0:2], 16),int(x[2:4], 16),int(x[4:6], 16),int(x[6:8], 16),int(x[8:10], 16),int(x[10:12], 16),int(x[12:14], 16)\
 		,int(x[14:16], 16), int(x[16:18], 16),int(x[18:20], 16),int(x[20:22], 16),int(x[22:24], 16),int(x[24:26], 16),int(x[26:28], 16),\
 		int(x[28:30], 16),int(x[30:32], 16) )
 	xPrime = interact(tuple, m)
 	xPrime2 = interact(tuple, m)
-
-	x = "359A5B18E6132847AD6D16B0FEB45E53"
-	xPrime = "71C86574B48DA0D2C874D730715205B0"
+	#x = "359A5B18E6132847AD6D16B0FEB45E53"#
+	#xPrime = "71C86574B48DA0D2C874D730715205B0"
 	xArray = []
 	xPrimeArray = []
 	xPrimeArray2 = []
@@ -460,7 +462,7 @@ def attack() :
 	(firstFault2 , k1Potentials) = calcQuad(xArray, xPrimeArray, 5, 1, 2, 1, 15, 3, 12, 2)  
 	firstFault3 = calcQuad(xArray, xPrimeArray, 9, 1, 6,3, 3, 2, 16, 1)
 	firstFault4 = calcQuad(xArray, xPrimeArray, 13, 3, 10,2, 7, 1, 4, 1)
-
+	eqResults = [firstFault1, firstFault2, firstFault3, firstFault4]
 
 	xNum = []
 	xPrimeNum = []
@@ -469,170 +471,8 @@ def attack() :
 	for i in xPrimeArray:
 		xPrimeNum.append(int(i, 16))
 
-	x1 = xNum[0]
-	x2 = xNum[1]
-	x3 = xNum[2]
-	x4 = xNum[3]
-	x5 = xNum[4]
-	x6 = xNum[5]
-	x7 = xNum[6]
-	x8 = xNum[7]
-	x9 = xNum[8]
-	x10 = xNum[9]
-	x11= xNum[10]
-	x12 = xNum[11]
-	x13 = xNum[12]
-	x14 = xNum[13]
-	x15 = xNum[14]
-	x16 = xNum[15]
 
-	x1P = xPrimeNum[0]
-	x2P = xPrimeNum[1]
-	x3P = xPrimeNum[2]
-	x4P = xPrimeNum[3]
-	x5P = xPrimeNum[4]
-	x6P = xPrimeNum[5]
-	x7P = xPrimeNum[6]
-	x8P = xPrimeNum[7]
-	x9P = xPrimeNum[8]
-	x10P = xPrimeNum[9]
-	x11P = xPrimeNum[10]
-	x12P = xPrimeNum[11]
-	x13P = xPrimeNum[12]
-	x14P = xPrimeNum[13]
-	x15P = xPrimeNum[14]
-	x16P = xPrimeNum[15]
-	h10 = aes_round_constant[9]
-	count = 0
-	gf2 = gf_inv(2)
-	gf3 = gf_inv(3)
-	for a in firstFault1:
-		k14 = a[0]
-		k11 = a[1]
-		k8 = a[2]
-		for b in firstFault2:
-			k5 = b[0]
-			k15 = b[1]
-			k12 = b[2]
-			for c in firstFault3:
-				k9 = c[0]
-				k6 = c[1]
-				k3 = c[2]
-				k16 = c[3]
-				for d in firstFault4:
-					#K = firstFault1[i]+firstFault2[j]+firstFault3[k]+firstFault4[l]
-					k13 = d[0]
-					k10 = d[1]
-					k7 = d[2]
-					k4 = d[3]
-					count = count + 1
-					#Equation 1
-					#k1 = K[0]
-					#k2 = K[1]
-			
-
-
-					if test:
-						k3 = actualK[2]
-						k4 = actualK[3]
-						k5 = actualK[4]
-						k6 = actualK[5]
-						k7 = actualK[6]
-						k8 = actualK[7]
-						k9 = actualK[8]
-						k10 = actualK[9]
-						k11= actualK[10]
-						k12 = actualK[11]
-						k13 = actualK[12]
-						k14= actualK[13]
-						k15 = actualK[14]
-						k16 = actualK[15]
-					k1 = 243
-					k2 = 121
-					k3 = 100
-					k4 = 58
-					k5 = 5
-					k6 = 111
-					k7 = 185
-					k8 = 102
-					k9 = 60
-					k10 = 93
-					k11= 170
-					k12 = 46
-					k13 = 136
-					k14= 31
-					k15 = 153
-					k16 = 157
-
-
-
-
-					f = rsbox[gf_mul((rsbox[x13 ^ k13] ^ (k13 ^ k9)), 9) \
-					^ gf_mul((rsbox[x10 ^ k10] ^ (k10 ^ k14)),14) \
-					^gf_mul((rsbox[x7 ^ k7] ^ (k15 ^ k11)),11) \
-					^gf_mul((rsbox[x4 ^ k4] ^ (k16 ^ k12)), 13)] \
-					^rsbox[gf_mul((rsbox[x13P ^ k13] ^ (k13 ^ k9)), 9) \
-					^ gf_mul((rsbox[x10P ^ k10] ^ (k10 ^ k14)),14) \
-					^gf_mul((rsbox[x7P ^ k7] ^ (k15 ^ k11)),11) \
-					^gf_mul((rsbox[x4P ^ k4] ^ (k16 ^ k12)), 13)] 
-					
-					if rsbox[gf_mul((rsbox[x9 ^ k9] ^ (k9 ^ k5)), 13) \
-					^ gf_mul((rsbox[x6 ^ k6] ^ (k10 ^ k6)),9) \
-					^gf_mul((rsbox[x3 ^ k3] ^ (k11 ^ k7)),14) \
-					^gf_mul((rsbox[x16 ^ k16] ^ (k12 ^ k8)), 11)] \
-					^rsbox[gf_mul((rsbox[x9P ^ k9] ^ (k9 ^ k5)), 13) \
-					^ gf_mul((rsbox[x6P ^ k6] ^ (k10 ^ k6)),9) \
-					^gf_mul((rsbox[x3P ^ k3] ^ (k11 ^ k7)),14) \
-					^gf_mul((rsbox[x16P ^ k16] ^ (k12 ^ k8)), 11)]  == f :
-
-						k0Key =(k14,k11,k8)
-						k1Key =(k5,k15,k12)
-						for o in k0Potentials[k0Key]:
-							for p in k1Potentials[k1Key]:
-								k1 = o
-								k2 = p
-								print gf_mul(rsbox[gf_mul( ( rsbox[x1 ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
-								^ gf_mul((rsbox[ x14 ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
-								^ gf_mul((rsbox[ x11^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
-								^ gf_mul((rsbox[ x8 ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)] \
-								^ rsbox[gf_mul((rsbox[x1P ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
-								^ gf_mul((rsbox[ x14P ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
-								^ gf_mul((rsbox[ x11P ^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
-								^ gf_mul((rsbox[ x8P ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)], gf2)
-								print k1
-								print k2
-								exit()
-								if gf_mul(rsbox[gf_mul( ( rsbox[x1 ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
-								^ gf_mul((rsbox[ x14 ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
-								^ gf_mul((rsbox[ x11^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
-								^ gf_mul((rsbox[ x8 ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)] \
-								^ rsbox[gf_mul((rsbox[x1P ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
-								^ gf_mul((rsbox[ x14P ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
-								^ gf_mul((rsbox[ x11P ^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
-								^ gf_mul((rsbox[ x8P ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)], gf2) == f:
-
-
-
-
-
-
-
-									if gf_mul(rsbox[gf_mul((rsbox[x5 ^ k5] ^ (k5 ^ k1)), 11) \
-									^ gf_mul((rsbox[x2 ^ k2] ^ (k6 ^ k2)),13) \
-									^gf_mul((rsbox[x15 ^ k15] ^ (k7 ^ k3)),9) \
-									^gf_mul((rsbox[x12 ^ k12] ^ (k8 ^ k4)), 14)] \
-									^rsbox[gf_mul((rsbox[x5P ^ k5] ^ (k5 ^ k1)), 11) \
-									^ gf_mul((rsbox[x2P ^ k2] ^ (k6 ^ k2)),13) \
-									^gf_mul((rsbox[x15P ^ k15] ^ (k7 ^ k3)),9) \
-									^gf_mul((rsbox[x12P ^ k12] ^ (k8 ^ k4)), 14)], gf3) == f :
-										K = [k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16]
-										K = keyReverse(K)
-										if aes(	K, m2) == numX:
-											print("success")
-											print K
-											exit()
-										else:
-											print ("fail")
+	k = stage2(m3, xNum, xPrimeNum, eqResults, k0Potentials, k1Potentials) 
 
 
 

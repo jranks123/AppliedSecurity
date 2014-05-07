@@ -1,0 +1,2 @@
+/home/ugrads/coms2011/jr0436/linux/.local/lib/python2.6/site-packages/stage2.so
+/home/ugrads/coms2011/jr0436/linux/.local/lib/python2.6/site-packages/Fault-1.0-py2.6.egg-info
