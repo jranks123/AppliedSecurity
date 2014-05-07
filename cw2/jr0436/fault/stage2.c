@@ -79,6 +79,19 @@ uint8_t gf_mul(uint8_t a, uint8_t b) {
   return t;
 }
 
+int isCorrectKey(uint8_t *k, uint8_t *m, uint8_t *c) {
+  uint8_t t[ 16 ];
+
+  AES_KEY rk;
+
+  AES_set_encrypt_key( k, 128, &rk );
+  AES_encrypt( m, t, &rk );  
+
+  if( !memcmp( t, c, 16 * sizeof( uint8_t ) ) ) return 1;
+  else return 0;
+}
+
+
 uint8_t gf_inv(uint8_t a) {
   uint8_t t_0;
   uint8_t t_1;
@@ -128,7 +141,7 @@ void keyReverse(uint8_t *k, uint8_t *rk10) {
   // copy rk10 into k_temp
   for (int i = 0; i < 16; i++)
     k_temp[i] = rk10[i];
-  for (int i = 10; i > 0; i--) // loop from 10 down to 1 (incl.)
+  for (int i = 9; i > -1; i--) // loop from 10 down to 1 (incl.)
     keyReverseStep(k_temp, k_temp, i);
   // copy k_temp into k
   for (int i = 0; i < 16; i++)
@@ -155,34 +168,12 @@ int getKey(uint8_t *kArray, uint8_t *mArray, uint8_t *xArray, uint8_t *xPrimeArr
   Py_ssize_t qLengths[4] = { 0 };
   unsigned long long count = 0, total = 0;
   int candidateCount = 0;
-  uint8_t k9Array[16] = { 0 }, candidateKeyArray[16] = { 0 };
+  uint8_t potentialKey[16] = { 0 };
   uint8_t f, fPrime, threeF, twoF;
   for (int i = 0; i < 4; i++) {
       eqLists[i] = PyList_GET_ITEM(eqResults, i); 
       eqLengths[i] = PyList_GET_SIZE(eqLists[i]);
   }
-
-     //  kArray[0]= 243;
-         //  kArray[1]= 121;
-
-           kArray[0] = 243;
-           kArray[1] = 121;
-           kArray[2] = 100;
-           kArray[3] = 58;
-           kArray[4] = 5;
-           kArray[5] = 111;
-           kArray[6] = 185;
-           kArray[7] = 102;
-           kArray[8] = 60;
-           kArray[9] = 93;
-           kArray[10] = 170;
-           kArray[11] = 46;
-           kArray[12] = 136;
-           kArray[13] = 31;
-           kArray[14] = 153;
-           kArray[15] = 157;
-
-
 
  
 
@@ -207,33 +198,14 @@ int getKey(uint8_t *kArray, uint8_t *mArray, uint8_t *xArray, uint8_t *xPrimeArr
         kArray[15] = PyInt_AS_LONG( PyList_GET_ITEM(q[2], 3));
   			for(int l = 0; l < eqLengths[3]; l++){
           count ++;
+          if(count%10000000 == 0){
+            printf("Completed %d rounds\n", count );
+          }
           q[3] = PyList_GET_ITEM(eqLists[3], l);
           kArray[12] = PyInt_AS_LONG( PyList_GET_ITEM(q[3], 0));
           kArray[9] = PyInt_AS_LONG( PyList_GET_ITEM(q[3], 1));
           kArray[6] = PyInt_AS_LONG( PyList_GET_ITEM(q[3], 2));
           kArray[3] = PyInt_AS_LONG( PyList_GET_ITEM(q[3], 3));
-
-
-        //  kArray[0]= 243;
-         //  kArray[1]= 121;
-         /*  kArray[2] = 100;
-           kArray[3] = 58;
-           kArray[4] = 5;
-           kArray[5] = 111;
-           kArray[6] = 185;
-           kArray[7] = 102;
-           kArray[8] = 60;
-           kArray[9] = 93;
-           kArray[10] = 170;
-           kArray[11] = 46;
-           kArray[12] = 136;
-           kArray[13] = 31;
-           kArray[14] = 153;
-           kArray[15] = 157;*/
-
-
-
-        //  (201, 5, 119, 117, 46, 55, 249, 154, 52, 173, 133, 209, 68, 25, 193, 53)
            f = rsbox[gf_mul((rsbox[xArray[12] ^ kArray[12]] ^ (kArray[12] ^ kArray[8])), 9) \
                     ^ gf_mul((rsbox[xArray[9] ^ kArray[9]] ^ (kArray[9] ^ kArray[13])),14) \
                     ^gf_mul((rsbox[xArray[6] ^ kArray[6]] ^ (kArray[14]^ kArray[10])),11) \
@@ -253,7 +225,6 @@ int getKey(uint8_t *kArray, uint8_t *mArray, uint8_t *xArray, uint8_t *xPrimeArr
                     ^gf_mul((rsbox[xPrimeArray[15] ^ kArray[15]] ^ (kArray[11] ^ kArray[7])), 11)]) == f){
 
 
-              printf("beat first 2\n");
               
               ka = Py_BuildValue("i", kArray[13]);
               kb= Py_BuildValue("i", kArray[10]);
@@ -291,11 +262,6 @@ int getKey(uint8_t *kArray, uint8_t *mArray, uint8_t *xArray, uint8_t *xPrimeArr
                       ^ gf_mul((rsbox[ xPrimeArray[13] ^ kArray[13]]^(kArray[1] ^ sbox[kArray[14] ^ kArray[10]])),11) \
                       ^ gf_mul((rsbox[ xPrimeArray[10] ^ kArray[10]] ^ (kArray[2] ^ sbox[kArray[15] ^ kArray[11]])),13) \
                       ^ gf_mul((rsbox[ xPrimeArray[7] ^ kArray[7]] ^ (kArray[3] ^ sbox[kArray[12] ^ kArray[8]])), 9)], gf2) ==f ){
-                    printf("third");
-
-                   // printf("k0 = %d\n", kArray[0]);
-                   // printf("k1 = %d\n", kArray[1]);
-
                       if(gf_mul(rsbox[gf_mul((rsbox[xArray[4] ^ kArray[4]] ^ (kArray[4] ^ kArray[0])), 11) \
                             ^ gf_mul((rsbox[xArray[1] ^ kArray[1]] ^ (kArray[5] ^ kArray[1])),13) \
                             ^gf_mul((rsbox[xArray[14] ^ kArray[14]] ^ (kArray[6]^ kArray[2])),9) \
@@ -305,8 +271,21 @@ int getKey(uint8_t *kArray, uint8_t *mArray, uint8_t *xArray, uint8_t *xPrimeArr
                             ^gf_mul((rsbox[xPrimeArray[14] ^ kArray[14]] ^ (kArray[6]^ kArray[2])),9) \
                             ^gf_mul((rsbox[xPrimeArray[11] ^ kArray[11]] ^ (kArray[7] ^ kArray[3])), 14)], gf3) == f){
 
-                        printf("Got past 4th eq, count = %d", count);
-                        exit(0);
+                              keyReverse(potentialKey, kArray);
+                             
+                            if (isCorrectKey(potentialKey, mArray, xArray)) {
+                                printf("Found key after checking %llu combinations\n", count);
+
+                                 for(int c = 0; c < 16; c++){
+                                  printf("%d,",potentialKey[c] );
+                                }
+                                // copy candidate key array to output array
+                                return 1;
+                              }
+                            
+                            
+                              
+                             
 
                       }
 

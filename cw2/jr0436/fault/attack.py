@@ -88,6 +88,7 @@ def cheat(xArray, xPrimeArray, xPrimeArray2):
 	k4 = quad4[3]
 	
 	result = k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11, k12, k13, k14, k15, k16
+	print result
 	r = ""
 	for i in result:
 	 	r = r + str(hex(i).lstrip("0x").zfill(2))
@@ -414,13 +415,14 @@ def keyReverseStep(r, roundNumber) :
 def keyReverse(k) :
   k_temp = k[:] 
   for i in reversed(xrange(0, 10)):
-    k_temp = keyReverseStep(k_temp, i)
+  	print i
+  	k_temp = keyReverseStep(k_temp, i)
   return k_temp
 	
 		
 	
 def attack() :
-	test = False
+	test = True
 	r = '8'
 	f = '1'
 	p = '0'
@@ -440,8 +442,7 @@ def attack() :
 	xPrime = interact(tuple, m)
 	xPrime2 = interact(tuple, m)
 
-	x = "359A5B18E6132847AD6D16B0FEB45E53"
-	xPrime = "71C86574B48DA0D2C874D730715205B0"
+
 	xArray = []
 	xPrimeArray = []
 	xPrimeArray2 = []
@@ -547,22 +548,8 @@ def attack() :
 						k14= actualK[13]
 						k15 = actualK[14]
 						k16 = actualK[15]
-					k1 = 243
-					k2 = 121
-					k3 = 100
-					k4 = 58
-					k5 = 5
-					k6 = 111
-					k7 = 185
-					k8 = 102
-					k9 = 60
-					k10 = 93
-					k11= 170
-					k12 = 46
-					k13 = 136
-					k14= 31
-					k15 = 153
-					k16 = 157
+	
+		
 
 
 
@@ -601,7 +588,7 @@ def attack() :
 								^ gf_mul((rsbox[ x8P ^ k8] ^ (k4 ^ sbox[k13 ^ k9])), 9)], gf2)
 								print k1
 								print k2
-								exit()
+						
 								if gf_mul(rsbox[gf_mul( ( rsbox[x1 ^ k1] ^ k1 ^ sbox[k14 ^ k10] ^ h10), 14) \
 								^ gf_mul((rsbox[ x14 ^ k14]^(k2 ^ sbox[k15 ^ k11])),11) \
 								^ gf_mul((rsbox[ x11^ k11] ^ (k3 ^ sbox[k16 ^ k12])),13) \
@@ -626,9 +613,11 @@ def attack() :
 									^gf_mul((rsbox[x15P ^ k15] ^ (k7 ^ k3)),9) \
 									^gf_mul((rsbox[x12P ^ k12] ^ (k8 ^ k4)), 14)], gf3) == f :
 										K = [k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16]
+										print K
 										K = keyReverse(K)
 										if aes(	K, m2) == numX:
 											print("success")
+
 											print K
 											exit()
 										else:
