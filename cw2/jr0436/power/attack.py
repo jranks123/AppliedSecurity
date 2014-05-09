@@ -65,13 +65,13 @@ def limitArray(t, lowBound, upperBound):
 	newArray = []
 	for j in range(0,10):
 		newT = []
-		for i in range (lowBound, upperBound-1):
+		for i in range (lowBound, upperBound):
 		#	print t
 		#	print ("i = " + str(i))
 		#	print ("j = " + str(j))
 			newT.append(t[j][i])
 		newArray.append(newT)
-	print("length of new T = " + str(len(newT[0])))
+	print("length of new T = " + str(len(newT)))
 	print
 	return newArray
 
@@ -117,7 +117,7 @@ def  dfa(mLow, mHigh, traces, messages):
 	highestNum = 0
 	chunksize = 50
 	chunks = n/50
-
+	highestRow = 0
 
 	#python pool
 
@@ -140,7 +140,7 @@ def  dfa(mLow, mHigh, traces, messages):
 				highestNum = currentHigh
 				highestRow = i
 
-	#print highestRow
+	print "KEY = " + str(highestRow)
 	return peakPosition
 			
 def dfaQuad(k1, k2, k3, k4, lowBound, upperBound, traces, messages):
@@ -149,10 +149,9 @@ def dfaQuad(k1, k2, k3, k4, lowBound, upperBound, traces, messages):
 	print "LOWER BOUND DISCOVERED = " + str(lowBound)
 	upperBound = upperBound - lowTemp 
 	traces = limitArray(traces, lowBound, upperBound)
-	upperTemp = dfa(k3,k4,traces, messages)
+	upperBound = dfa(k3,k4,traces, messages)
 	print
-	print "Upper BOUND DISCOVERED = " + str(upperTemp)
-	upperBound = upperBound-upperTemp 
+	print "Upper BOUND DISCOVERED = " + str(upperBound)
 	traces = limitArray(traces, 0, upperBound)
 	return (lowBound, upperBound, traces, messages)
 
