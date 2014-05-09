@@ -75,17 +75,10 @@ def getPeak(cRow):
 
 
 
-def attack(mLow, mHigh, lowBound, highBound):
-	traces = []
-	messages = []
-	ciphertexts = []
-	for i in range(0, 10):
-		m = generateHex()
-		t, c = interact(m)
-		t = getArray(t)
-		t = limitArray(t, lowBound, highBound)
-		traces.append(t)
-		messages.append(m)
+def attack(mLow, mHigh, lowBound, highBound,traces,m):
+
+
+		
 
 	b = 1
 	tracesLen = len(traces)
@@ -133,6 +126,7 @@ def attack(mLow, mHigh, lowBound, highBound):
 				highestRow = i
 	print peakPosition
 	print highestRow
+	print
 
 			
 
@@ -145,12 +139,32 @@ if ( __name__ == "__main__" ) :
                              stdin  = subprocess.PIPE )
 
   # Construct handles to attack target standard input and output.
-
-  lowBound = 900
-  upperBound = 1500
   target_out = target.stdout
   target_in  = target.stdin
-  attack(0,2,lowBound, upperBound)
+  traces= []
+  messages = []
+  ciphertexts = []
+  lowBound = 900
+  upperBound = 1500
+  for i in range(0, 20):
+	m = generateHex()
+	t, c = interact(m)
+	t = getArray(t)
+	t = limitArray(t, lowBound, upperBound)
+	traces.append(t	)
+	messages.append(m)
+
+
+  attack(0,2,lowBound, upperBound,traces,m)
+  attack(2,4,lowBound, upperBound,traces,m)
+  attack(4,6,lowBound, upperBound,traces,m)
+  attack(6,8,lowBound, upperBound,traces,m)
+  attack(8,10,lowBound, upperBound,traces,m)
+  attack(10,12,lowBound, upperBound,traces,m)
+  attack(12,14,lowBound, upperBound,traces,m)
+  attack(14,16,lowBound, upperBound,traces,m)
+  attack(16,18,lowBound, upperBound,traces,m)
+
 
 
 
