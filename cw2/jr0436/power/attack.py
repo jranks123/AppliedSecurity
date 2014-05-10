@@ -1,8 +1,23 @@
 import sys, subprocess, math, os, random, platform, numpy, string
+
+import struct, Crypto.Cipher.AES as AES
+from multiprocessing import Pool
+
 def generateHex() :
 	lst = [random.choice(string.hexdigits) for n in xrange(32)]
 	cHex = "".join(lst)
 	return cHex
+
+
+def aes(k, m):
+  k = struct.pack( 16 * "B", *k )
+  m = struct.pack( 16 * "B", *m )
+
+
+  t = AES.new( k ).encrypt( m )
+
+  return struct.unpack(16 * "B", t)
+
 
 
 sbox =  [0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67,
@@ -75,7 +90,7 @@ def getPeak(cRow):
 
 
 
-def attack(mLow, mHigh, lowBound, highBound,traces,m):
+def attack(mLow, mHigh, lowBound, highBound,traces, kNumber):
 
 
 		
@@ -104,9 +119,10 @@ def attack(mLow, mHigh, lowBound, highBound,traces,m):
 	chunks = n/50
 
 
-	#python pool
 
-
+	#Check if the current peak is the highest for the current potential key
+	#If so keep track of what loop it is in (this will be the value of the byte)
+	#and the current peak
 	for i in range(0, 256):
 		for j in range(0, chunks):
 			traceArray = []
@@ -118,53 +134,96 @@ def attack(mLow, mHigh, lowBound, highBound,traces,m):
 			traceArray = numpy.reshape(traceArray, (tracesLen, chunksize))
 			powArray = numpy.reshape(powArray, (tracesLen, 1))
 			cmatrix = numpy.corrcoef(traceArray, powArray, 0)
-			cmatrix = zip(*cmatrix)
 			(currentHigh, potentialPeakPosition) = getPeak(cmatrix[50:][0][:50])
 			if currentHigh > highestNum:
-				peakPosition = (j*chunks)+ potentialPeakPosition
+				peakPosition = (j*chunks)+potentialPeakPosition
 				highestNum = currentHigh
 				highestRow = i
-	print peakPosition
-	print highestRow
-	print
+	print "Key byte " + str(kNumber) + " = " + str(highestRow)
+	return (kNumber, highestRow)
 
-			
+
+
+def strToIntArray(m):
+	return [int(m[0:2], 16),int(m[2:4], 16),int(m[4:6], 16),int(m[6:8], 16),int(m[8:10], 16),int(m[10:12], 16),int(m[12:14], 16)\
+,int(m[14:16], 16), int(m[16:18], 16),int(m[18:20], 16),int(m[20:22], 16),int(m[22:24], 16),int(m[24:26], 16),int(m[26:28], 16),\
+int(m[28:30], 16),int(m[30:32], 16) ]
+		
 
 		#	traceArray.append(traces[])
 		#	cmatrix = numpy.corrcoef()
 if ( __name__ == "__main__" ) :
-  # Produce a sub-process representing the attack target.
-  target = subprocess.Popen( args   = sys.argv[ 1 ],
-                             stdout = subprocess.PIPE, 
-                             stdin  = subprocess.PIPE )
+	# Produce a sub-process representing the attack target.
+	target = subprocess.Popen( args   = sys.argv[ 1 ],
+	                         stdout = subprocess.PIPE, 
+	                         stdin  = subprocess.PIPE )
 
-  # Construct handles to attack target standard input and output.
-  target_out = target.stdout
-  target_in  = target.stdin
-  traces= []
-  messages = []
-  ciphertexts = []
-  lowBound = 900
-  upperBound = 1500
-  for i in range(0, 20):
-	m = generateHex()
-	t, c = interact(m)
-	t = getArray(t)
-	t = limitArray(t, lowBound, upperBound)
-	traces.append(t	)
-	messages.append(m)
-
-
-  attack(0,2,lowBound, upperBound,traces,m)
-  attack(2,4,lowBound, upperBound,traces,m)
-  attack(4,6,lowBound, upperBound,traces,m)
-  attack(6,8,lowBound, upperBound,traces,m)
-  attack(8,10,lowBound, upperBound,traces,m)
-  attack(10,12,lowBound, upperBound,traces,m)
-  attack(12,14,lowBound, upperBound,traces,m)
-  attack(14,16,lowBound, upperBound,traces,m)
-  attack(16,18,lowBound, upperBound,traces,m)
+	# Construct handles to attack target standard input and output.
+	target_out = target.stdout
+	target_in  = target.stdin
+	traces= []
+	messages = []
+	ciphertexts = []
+	lowBound = 900
+	upperBound = 1500
+	for i in range(0, 30):
+		m = generateHex()
+		t, c = interact(m)
+		t = getArray(t)
+		t = limitArray(t, lowBound, upperBound)
+		traces.append(t	)
+		messages.append(m)
+		ciphertexts.append(c)
 
 
+	multiprocessingResults = []
+	resultArray = []
+	pool = Pool()
+	for i in range (0, 16):
+		result = pool.apply_async(attack,(2*i,2*i+2,lowBound, upperBound,traces, i))
+		resultArray.append(result)
 
+
+	#find the individual key bytes
+
+	#k1 = attack(0,2,lowBound, upperBound,traces, 'k1')
+	#k2 = attack(2,4,lowBound, upperBound,traces, 'k2')
+	#k3 = attack(4,6,lowBound, upperBound,traces, 'k3')
+	#k4 = attack(6,8,lowBound, upperBound,traces, 'k4')
+	#k5 = attack(8,10,lowBound, upperBound,traces, 'k5')
+	#k6 = attack(10,12,lowBound, upperBound,traces, 'k6')
+	#k7 = attack(12,14,lowBound, upperBound,traces, 'k7')
+	#k8 = attack(14,16,lowBound, upperBound,traces, 'k8')
+	#k9 = attack(16,18,lowBound, upperBound,traces, 'k9')
+	#k10 = attack(18,20,lowBound, upperBound,traces, 'k10')
+	#k11 = attack(20,22,lowBound, upperBound,traces, 'k11')
+	#k12 = attack(22,24,lowBound, upperBound,traces, 'k12')
+	#k13 = attack(24,26,lowBound, upperBound,traces, 'k13')
+	#k14 = attack(26,28,lowBound, upperBound,traces, 'k14')
+	#k15 = attack(28,30,lowBound, upperBound,traces, 'k15')
+	#k16 = attack(30,32,lowBound, upperBound,traces, 'k16')
+
+	pool.close
+	pool.join
+	for i in range (0, 16):
+		multiprocessingResults.append(resultArray[i].get())
+
+	#K = [k1,k2,k3,k4,k5,k6,k7,k8,k9,k10,k11,k12,k13,k14,k15,k16]
+
+	multiprocessingResults.sort(key=lambda tup: tup[0])
+	K = []
+	for i in range(0, 16):
+		K.append(multiprocessingResults[i][1])
+
+	m = messages[0]
+	messageArray = strToIntArray(m)
+	c = ciphertexts[0]
+	ciphertextArray = strToIntArray(c)
+
+	if aes(K, messageArray) == ciphertextArray:
+		print "key search was successfull, key is :"
+		print K
+	else :
+		print "key search was unsuccessful, key is:"
+		print K
 
